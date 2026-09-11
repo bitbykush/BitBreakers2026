@@ -1,4 +1,5 @@
-# AGENTS.md - System Rules & Architecture Mandates
+# AGENTS.md - Scheme Seva Kendra (योजना सेवा केंद्र) Rules & Architecture Mandates
+## Project: Scheme Seva Kendra | SIH Problem Statement 26092
 ## Target Environment: Render Free Tier (512MB RAM / 1 vCPU) + Vercel Edge Frontend
 ## Engineering Squad: 2 Developers (36-Hour Hackathon)
 
@@ -36,7 +37,7 @@
 ## 2. Directory Layout (Monorepo)
 
 ```text
-udyamsetu/
+scheme-seva-kendra/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                     # FastAPI entry & CORS
@@ -63,27 +64,45 @@ udyamsetu/
     ├── src/
     │   ├── app/
     │   │   ├── layout.tsx              # Root shell & Dev HUD trigger
-    │   │   ├── page.tsx                # Pathway 1: 1-Tap Profession & Voice
+    │   │   ├── page.tsx                # Pathway 1: 1-Tap Profession & Voice Discovery
+    │   │   ├── globals.css             # Tailwind CSS & Print layout styles
     │   │   ├── apply/
     │   │   │   └── page.tsx            # Pathway 2: Full Assisted Wizard
     │   │   ├── dashboard/
     │   │   │   └── page.tsx            # Ranked Schemes & Compatibility %
+    │   │   ├── schemes/
+    │   │   │   └── [id]/
+    │   │   │       └── page.tsx        # Official myScheme Details Portal (8 Tabs, ScrollSpy, 10 FAQs)
     │   │   └── caf/
     │   │       └── page.tsx            # Printable Common Application Format
     │   ├── components/
+    │   │   ├── common/
+    │   │   │   ├── Header.tsx          # Gov branding, language switcher & badges
+    │   │   │   └── Footer.tsx          # National portal footer & helpline
+    │   │   ├── compare/
+    │   │   │   ├── CompareDrawer.tsx   # Side-by-side scheme comparison drawer
+    │   │   │   └── FinancialAnalysisDrawer.tsx # Deep subsidy & promoter margin breakdown
     │   │   ├── dev/
     │   │   │   └── DevDebugDrawer.tsx  # Hidden Developer Panel HUD
-    │   │   ├── ocr/
-    │   │   │   └── TargetedOcrUpload.tsx # Scoped document dropzone & auto-fill
     │   │   ├── kyc/
     │   │   │   └── DigiLockerModal.tsx # Sandbox OTP eKYC verification
+    │   │   ├── ocr/
+    │   │   │   └── TargetedOcrUpload.tsx # Scoped document dropzone & auto-fill
+    │   │   ├── pathway1/
+    │   │   │   ├── BaselineMatchPreview.tsx # Instant matching schemes card list with direct scheme details link
+    │   │   │   ├── TradeSearchAndPills.tsx  # Interactive trade pills & instant search
+    │   │   │   └── UpgradeBanner.tsx        # Pathway 2 contextual upgrade prompt
     │   │   └── caf/
     │   │       └── CommonAppFormat.tsx # Official printable A4 dossier
     │   ├── hooks/
     │   │   ├── useSpeechRecognition.ts # Web Speech API (Hindi/English)
-    │   │   └── useDevHUD.ts            # Ctrl+Shift+D keyboard trigger
-    │   └── lib/
-    │       └── storage.ts              # LocalStorage zero-login state
+    │   │   └── useDevHUD.ts            # Ctrl+Shift+D keyboard trigger & multi-tap
+    │   ├── lib/
+    │   │   ├── api.ts                  # Backend API client with offline mock fallback
+    │   │   ├── mockData.ts             # Offline mock database (NSSFP, PMEGP, PM-SVANidhi, etc.)
+    │   │   └── storage.ts              # LocalStorage zero-login state manager
+    │   └── types/
+    │       └── index.ts                # TypeScript types (SchemeMatch, SchemeFAQ, CitizenProfile)
     └── package.json
 ```
 

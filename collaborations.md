@@ -1,5 +1,5 @@
 # COLLABORATIONS.md — Multi-Agent & 2-Developer Git Collaboration Protocol
-## Target Repository: `BitBreakers2026` | Hackathon: SIH Problem Statement 26092
+## Project: Scheme Seva Kendra (योजना सेवा केंद्र) | Target Repository: `BitBreakers2026` | Hackathon: SIH Problem Statement 26092
 
 ---
 
@@ -22,7 +22,13 @@ To ensure zero merge conflicts during parallel coding, file ownership is strictl
 │ • Owns: `frontend/`               │ • Owns: `backend/`                 │
 │ • UI components, styles, hooks    │ • FastAPI routes, models, schemas  │
 │ • Web Speech API, LocalStorage    │ • FastEmbed, RapidOCR, Gemini API  │
-│ • CAF Print View, Dev HUD Drawer  │ • Dynamic Document Engine, Docker  │
+│ • Official myScheme Details       │ • Dynamic Document Engine, Docker  │
+│   Portal (/schemes/[id]) with     │                                    │
+│   8 tabs, ScrollSpy, 10 FAQs      │                                    │
+│ • Baseline Matches & Trade Pills  │                                    │
+│ • Side-by-Side Compare Drawer     │                                    │
+│ • Financial Breakdown Drawer      │                                    │
+│ • CAF Print View, Dev HUD Drawer  │                                    │
 │ ❌ NEVER modifies `backend/` files │ ❌ NEVER modifies `frontend/` files │
 └───────────────────────────────────┴────────────────────────────────────┘
 ```
@@ -128,6 +134,9 @@ Neither Dev 1 nor Dev 2 may alter the API request or response signatures without
    - Returns: `{ verified: true, ref_id: "DL-2026-X8921", timestamp: ISOString }`
 4. **`GET /api/v1/dev/health`**:
    - Returns: `{ status: "healthy", process_rss_mb: number, max_limit_mb: 512, percent_used: number }`
+5. **`GET /api/v1/schemes/{id}` / Extended Model**:
+   - Supports the official myScheme.gov.in details dossier (`/schemes/[id]`).
+   - Returns: Comprehensive metadata with `benefits: string[]`, `eligibility_criteria: string[]`, `application_process: string[]`, `faqs: [{ question, answer }]`, `sources_and_references: [{ title, url }]`, and `tags: string[]`.
 
 ---
 
