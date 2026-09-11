@@ -1,0 +1,170 @@
+import { ApplicantProfile, DocumentRecord, DigiLockerRecord } from '../types';
+
+const STORAGE_KEYS = {
+  SESSION_ID: 'udyamsetu_session_id',
+  PROFILE: 'udyamsetu_applicant_profile',
+  DOCUMENTS: 'udyamsetu_verified_documents',
+  DIGILOCKER: 'udyamsetu_digilocker_state',
+  LANGUAGE: 'udyamsetu_lang',
+  FONT_SIZE: 'udyamsetu_font_size',
+};
+
+// Default seed profile (Sunita / Shanti Devi scenario from PRD & Pitch)
+export const DEFAULT_PROFILE: ApplicantProfile = {
+  name: 'Shanti Devi Kushwaha',
+  dob: '1988-08-14',
+  gender: 'Female',
+  category: 'OBC',
+  annualIncome: 120000,
+  state: 'Uttar Pradesh',
+  district: 'Gorakhpur',
+  areaType: 'Rural',
+  education: '10th',
+  profession: 'Terracotta Potter',
+  professionHi: 'कुम्हार',
+  requiredCapital: 200000,
+  maskedAadhaar: 'XXXX-XXXX-3456',
+  casteCertificateNo: 'OBC-UP-2023-88219',
+  incomeCertificateNo: 'INC-UP-2024-55102',
+  marksPercentage: 68.5,
+};
+
+export const DEFAULT_DOCUMENTS: DocumentRecord[] = [
+  {
+    code: 'DOC_AADHAAR',
+    name: 'Aadhaar Card',
+    nameHi: 'आधार कार्ड',
+    isVerified: true,
+    verificationSource: 'RAPIDOCR',
+    referenceId: 'UIDAI-MASKED-3456',
+    verifiedAt: new Date().toISOString(),
+  },
+  {
+    code: 'DOC_CASTE',
+    name: 'Caste Certificate',
+    nameHi: 'जाति प्रमाण पत्र',
+    isVerified: true,
+    verificationSource: 'DIGILOCKER',
+    referenceId: 'DL-OBC-88219',
+    verifiedAt: new Date().toISOString(),
+  },
+  {
+    code: 'DOC_INCOME',
+    name: 'Income Certificate',
+    nameHi: 'आय प्रमाण पत्र',
+    isVerified: true,
+    verificationSource: 'RAPIDOCR',
+    referenceId: 'INC-2024-55102',
+    verifiedAt: new Date().toISOString(),
+  },
+  {
+    code: 'DOC_RURAL',
+    name: 'Rural Area Certificate',
+    nameHi: 'ग्रामीण क्षेत्र प्रमाण पत्र',
+    isVerified: false,
+  },
+  {
+    code: 'DOC_MARKSHEET',
+    name: 'Class 10th Marksheet',
+    nameHi: '10वीं अंकतालिका',
+    isVerified: true,
+    verificationSource: 'RAPIDOCR',
+    referenceId: 'UPBOARD-10-8842',
+    verifiedAt: new Date().toISOString(),
+  },
+];
+
+export const StorageService = {
+  getSessionId(): string {
+    if (typeof window === 'undefined') return 'ephemeral-session';
+    let sid = localStorage.getItem(STORAGE_KEYS.SESSION_ID);
+    if (!sid) {
+      sid = 'usr_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+      localStorage.setItem(STORAGE_KEYS.SESSION_ID, sid);
+    }
+    return sid;
+  },
+
+  getProfile(): ApplicantProfile {
+    if (typeof window === 'undefined') return DEFAULT_PROFILE;
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PROFILE);
+      return data ? JSON.parse(data) : DEFAULT_PROFILE;
+    } catch {
+      return DEFAULT_PROFILE;
+    }
+  },
+
+  saveProfile(profile: Partial<ApplicantProfile>): ApplicantProfile {
+    if (typeof window === 'undefined') return DEFAULT_PROFILE;
+    const current = this.getProfile();
+    const updated = { ...current, ...profile };
+    localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
+    return updated;
+  },
+
+  getDocuments(): DocumentRecord[] {
+    if (typeof window === 'undefined') return DEFAULT_DOCUMENTS;
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
+      return data ? JSON.parse(data) : DEFAULT_DOCUMENTS;
+    } catch {
+      return DEFAULT_DOCUMENTS;
+    }
+  },
+
+  saveDocuments(docs: DocumentRecord[]): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(docs));
+  },
+
+  verifyDocument(code: string, source: DocumentRecord['verificationSource'], refId: string): DocumentRecord[] {
+    const docs = this.getDocuments();
+    const updated = docs.map((doc) => {
+      if (doc.code === code) {
+        return {
+          ...doc,
+          isVerified: true,
+          verificationSource: source,
+          referenceId: refId,
+          verifiedAt: new Date().toISOString(),
+        };
+      }
+      return doc;
+    });
+    this.saveDocuments(updated);
+    return updated;
+  },
+
+  getDigiLockerState(): DigiLockerRecord | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.DIGILOCKER);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  saveDigiLockerState(record: DigiLockerRecord): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.DIGILOCKER, JSON.stringify(record));
+  },
+
+  getLanguage(): 'en' | 'hi' {
+    if (typeof window === 'undefined') return 'en';
+    return (localStorage.getItem(STORAGE_KEYS.LANGUAGE) as 'en' | 'hi') || 'en';
+  },
+
+  setLanguage(lang: 'en' | 'hi'): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
+  },
+
+  clearSession(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(STORAGE_KEYS.PROFILE);
+    localStorage.removeItem(STORAGE_KEYS.DOCUMENTS);
+    localStorage.removeItem(STORAGE_KEYS.DIGILOCKER);
+  },
+};
