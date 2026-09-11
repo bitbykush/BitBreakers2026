@@ -26,6 +26,7 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
     language: voiceLang,
     setLanguage: setVoiceLang,
     toggleRecording,
+    errorMessage,
   } = useSpeechRecognition((transcript) => {
     setSearchQuery(transcript);
     onSearchChange(transcript);
@@ -151,6 +152,15 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
               <div className="w-1.5 h-4 bg-amber-300 rounded-full wave-bar" />
               <div className="w-1.5 h-2 bg-orange-400 rounded-full wave-bar" />
             </div>
+          </div>
+        )}
+
+        {/* Error / Status Feedback */}
+        {errorMessage && !isRecording && (
+          <div className="mt-2 text-center animate-fadeIn">
+            <span className="inline-block text-xs font-medium text-amber-200 bg-black/60 px-3.5 py-1.5 rounded-xl border border-amber-500/30 backdrop-blur shadow-sm">
+              ℹ️ {errorMessage}
+            </span>
           </div>
         )}
       </div>

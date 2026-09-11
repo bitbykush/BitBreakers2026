@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Info, ShieldCheck, PenSquare, ArrowRight } from 'lucide-react';
+import { ShieldCheck, PenSquare, ArrowRight } from 'lucide-react';
 import { SchemeMatch } from '@/types';
 
 interface BaselineMatchPreviewProps {
@@ -45,13 +45,6 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
             {currentLang === 'hi' ? 'चयनित व्यवसाय: ' : 'Matched for selected trade: '}
             <span className="font-bold text-indigo-900">{selectedTradeName}</span>
           </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-            <Info className="w-3.5 h-3.5 text-amber-600" />
-            70% Estimated Accuracy
-          </span>
         </div>
       </div>
 
