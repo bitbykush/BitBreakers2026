@@ -1,14 +1,15 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, Sparkles, Building2 } from 'lucide-react';
+import { ShieldCheck, Sparkles, Building2, Accessibility } from 'lucide-react';
 import { StorageService } from '@/lib/storage';
+import { useAccessibility } from '@/context/AccessibilityContext';
 
 interface HeaderProps {
   currentLang: 'en' | 'hi';
   onLangChange: (lang: 'en' | 'hi') => void;
-  isLargerFont: boolean;
-  onToggleFont: () => void;
+  isLargerFont?: boolean;
+  onToggleFont?: () => void;
   onOpenDigiLocker?: () => void;
   onTripleTapLogo?: () => void;
 }
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDigiLocker,
   onTripleTapLogo,
 }) => {
+  const { setIsA11yMenuOpen } = useAccessibility();
   return (
     <>
       {/* Top Announcement Bar */}
@@ -73,20 +75,18 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Right Controls: Font Scale & Lang Switcher */}
+          {/* Right Controls: Accessibility & Lang Switcher */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
-            {/* Font Size Toggle */}
+            {/* Single Unified Accessibility Button */}
             <button
-              className={`h-9 px-2.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 shadow-2xs ${
-                isLargerFont
-                  ? 'bg-indigo-950 text-white border-indigo-900'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-              onClick={onToggleFont}
-              title="Toggle Larger Text / बड़ा फॉन्ट"
+              className="h-9 px-2.5 sm:px-3 rounded-xl border border-indigo-200/90 bg-indigo-50/70 hover:bg-indigo-100/90 text-indigo-950 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs group cursor-pointer"
+              onClick={() => setIsA11yMenuOpen(true)}
+              title="Accessibility Menu (TalkBack Screen Reader, High Contrast, Zoom) / सुगमता मेनू"
+              aria-label="Open Accessibility Menu"
             >
-              <span className="text-slate-400">A</span>
-              <span className="font-extrabold text-sm">A+</span>
+              <Accessibility className="w-4 h-4 text-indigo-700 group-hover:scale-110 transition-transform flex-shrink-0" />
+              <span className="font-extrabold text-xs text-indigo-950">Accessibility</span>
+              <span className="hidden md:inline text-slate-500 font-normal text-[11px]">| सुगमता</span>
             </button>
 
             {/* Bilingual Switcher */}

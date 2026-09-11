@@ -63,9 +63,9 @@ scheme-seva-kendra/
 └── frontend/
     ├── src/
     │   ├── app/
-    │   │   ├── layout.tsx              # Root shell & Dev HUD trigger
+    │   │   ├── layout.tsx              # Root shell, AccessibilityShell & Dev HUD trigger
     │   │   ├── page.tsx                # Pathway 1: 1-Tap Profession & Voice Discovery
-    │   │   ├── globals.css             # Tailwind CSS & Print layout styles
+    │   │   ├── globals.css             # Tailwind CSS, High Contrast & Print styles
     │   │   ├── apply/
     │   │   │   └── page.tsx            # Pathway 2: Full Assisted Wizard
     │   │   ├── dashboard/
@@ -76,8 +76,13 @@ scheme-seva-kendra/
     │   │   └── caf/
     │   │       └── page.tsx            # Printable Common Application Format
     │   ├── components/
+    │   │   ├── accessibility/
+    │   │   │   ├── AccessibilityMenuModal.tsx # Android Quick Settings Accessibility Drawer
+    │   │   │   ├── TalkBackSpeechBar.tsx      # Floating speech audio playback controller
+    │   │   │   ├── MagnifierLens.tsx          # Interactive 2x cursor spotlight & Reading Guide
+    │   │   │   └── AccessibilityShell.tsx     # Global accessibility wrapper shell
     │   │   ├── common/
-    │   │   │   ├── Header.tsx          # Gov branding, language switcher & badges
+    │   │   │   ├── Header.tsx          # Gov branding, unified ♿ Accessibility button & badges
     │   │   │   └── Footer.tsx          # National portal footer & helpline
     │   │   ├── compare/
     │   │   │   ├── CompareDrawer.tsx   # Side-by-side scheme comparison drawer
@@ -94,6 +99,8 @@ scheme-seva-kendra/
     │   │   │   └── UpgradeBanner.tsx        # Pathway 2 contextual upgrade prompt
     │   │   └── caf/
     │   │       └── CommonAppFormat.tsx # Official printable A4 dossier
+    │   ├── context/
+    │   │   └── AccessibilityContext.tsx # TalkBack Web Speech Synthesis & Contrast state
     │   ├── hooks/
     │   │   ├── useSpeechRecognition.ts # Web Speech API (Hindi/English)
     │   │   └── useDevHUD.ts            # Ctrl+Shift+D keyboard trigger & multi-tap

@@ -533,3 +533,62 @@ export interface SchemeMatch {
 }
 ```
 
+---
+
+## 7. Android-Style Accessibility Architecture & TalkBack Engine
+
+### 7.1. Component Architecture & Shell Hierarchy
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                   RootLayout (app/layout.tsx)                         │
+├────────────────────────────────────────────────────────────────────────┤
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ AccessibilityShell (components/accessibility/AccessibilityShell)   │ │
+│ ├────────────────────────────────────────────────────────────────────┤ │
+│ │ ┌────────────────────────────────────────────────────────────────┐ │ │
+│ │ │ AccessibilityProvider (context/AccessibilityContext.tsx)       │ │ │
+│ │ │ • State: Contrast, Zoom, Font, TalkBack, Reading Guide, Lens   │ │ │
+│ │ │ • Persistence: localStorage ('udyamsetu_a11y_prefs')           │ │ │
+│ │ ├────────────────────────────────────────────────────────────────┤ │ │
+│ │ │ Page Content ({children}):                                     │ │ │
+│ │ │   ├── Header (Single Unified ♿ Accessibility Button)           │ │ │
+│ │ │   ├── Pathway 1 / Pathway 2 / Scheme Details / CAF             │ │ │
+│ │ │   └── Footer                                                   │ │ │
+│ │ ├────────────────────────────────────────────────────────────────┤ │ │
+│ │ │ AccessibilityMenuModal (Android Quick Settings Drawer)         │ │ │
+│ │ │ TalkBackSpeechBar (Floating Audio Playback Controller)         │ │ │
+│ │ │ MagnifierLens & ReadingGuide (Cursor Spotlight & Focus Ruler)   │ │ │
+│ │ └────────────────────────────────────────────────────────────────┘ │ │
+│ └────────────────────────────────────────────────────────────────────┘ │ │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.2. TalkBack Screen Reader Engine Specs
+- **Speech API**: Native `window.speechSynthesis` and `SpeechSynthesisUtterance`.
+- **Voice Selection**:
+  - Automatically queries available system voices (`window.speechSynthesis.getVoices()`).
+  - Prioritizes `hi-IN` / Hindi voices when page language is `hi`.
+  - Prioritizes `en-IN` / Indian English or general English when page language is `en`.
+- **Interactive DOM Scanner**:
+  - Listens to `mouseover` (250ms debounce) and `focusin` events across `document`.
+  - Intelligently extracts readable strings from `aria-label`, `title`, button labels, headings, inputs, and scheme card highlights.
+  - Excludes container elements and controller bars to prevent feedback loops.
+- **Visual Feedback Ring**:
+  - Injects `.talkback-speaking-outline` (`outline: 3px solid #FFE600 !important; box-shadow: 0 0 16px rgba(255, 230, 0, 0.9)`).
+  - Automatically un-mounts the ring when utterance finishes or user focuses elsewhere.
+- **Keyboard Shortcuts**:
+  - `Alt + A`: Toggle Accessibility Menu modal.
+  - `Alt + T`: Toggle TalkBack screen reader on/off.
+  - `Escape`: Instantly cancels active speech.
+
+### 7.3. WCAG AAA High Contrast & Magnifier Token Matrix
+| Feature | Class / Style | Specifications |
+| :--- | :--- | :--- |
+| **Yellow on Black (Dark)** | `html.a11y-contrast-yellow` | Background `#000000`, Typography `#FFE600`, Accents `#00F0FF`, 2px solid yellow borders on cards, inputs, and buttons ($>14:1$ contrast ratio) |
+| **Monochrome (Light)** | `html.a11y-contrast-mono` | Background `#FFFFFF`, Typography `#000000`, 2px solid black borders |
+| **Global Page Zoom** | `body { zoom: X% }` | Supports `100%`, `125%`, `150%`, `175%`, `200%` |
+| **Magnifier Lens** | `#magnifier-lens` | 192px circular spotlight tracking `(clientX, clientY)` with 2x enlarged text preview |
+| **Reading Guide** | `#reading-guide` | Horizontal semi-transparent ruler with yellow focus lines tracking `clientY` |
+| **Dyslexia Typography** | `html.a11y-dyslexia` | `letter-spacing: 0.06em; word-spacing: 0.12em; line-height: 1.8` |
+
+
