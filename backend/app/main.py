@@ -7,8 +7,11 @@ from app.config import get_settings
 from app.models.schemas import HealthResponse
 from app.api.v1.routes_dev import router as dev_router
 from app.api.v1.routes_schemes import router as schemes_router
+from app.api.v1.routes_ocr import router as ocr_router
+from app.api.v1.routes_kyc import router as kyc_router
 from app.services.embedding_service import get_embedding_service
 from app.services.matcher import get_scheme_matcher
+from app.services.ocr_engine import get_ocr_engine
 
 # Configure structured logging
 logging.basicConfig(
@@ -81,6 +84,8 @@ app.add_middleware(
 # Mount API routers
 app.include_router(dev_router, prefix="/api/v1")
 app.include_router(schemes_router, prefix="/api/v1")
+app.include_router(ocr_router, prefix="/api/v1")
+app.include_router(kyc_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])

@@ -149,6 +149,8 @@ export default function Home() {
     if (extracted.certificate_number) patch.casteCertificateNo = extracted.certificate_number;
     if (extracted.marks_percentage) patch.marksPercentage = extracted.marks_percentage;
     if (extracted.highest_education) patch.education = extracted.highest_education;
+    if (extracted.state) patch.state = extracted.state;
+    if (extracted.district) patch.district = extracted.district;
 
     const updated = StorageService.saveProfile(patch);
     setProfile(updated);
@@ -336,13 +338,16 @@ export default function Home() {
                   <div className="relative">
                     <input
                       type="text"
+                      placeholder={currentLang === 'hi' ? 'दस्तावेज़ से स्वतः भरा जाएगा या टाइप करें' : 'Auto-filled from OCR or type manually'}
                       value={profile.name}
                       onChange={(e) => handleFormChange('name', e.target.value)}
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
                     />
-                    <span className="absolute right-3 top-3 text-emerald-600 text-xs font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> OCR Verified
-                    </span>
+                    {profile.name && (
+                      <span className="absolute right-3 top-3 text-emerald-600 text-xs font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> OCR Verified
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -397,7 +402,7 @@ export default function Home() {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={`₹${profile.annualIncome.toLocaleString('en-IN')} / year`}
+                      value={profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year` : '₹0'}
                       readOnly
                       className="w-1/2 h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
                     />
@@ -406,7 +411,7 @@ export default function Home() {
                         type="button"
                         onClick={() => handleFormChange('annualIncome', 120000)}
                         className={`flex-1 text-[11px] font-bold rounded-lg border transition ${
-                          profile.annualIncome <= 150000
+                          profile.annualIncome > 0 && profile.annualIncome <= 150000
                             ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
                             : 'border-slate-200 bg-slate-50 text-slate-700'
                         }`}
@@ -439,6 +444,44 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* State (राज्य) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>{currentLang === 'hi' ? 'राज्य (State)' : 'State (राज्य)'}</span>
+                    {profile.state && (
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Aadhaar Back
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={currentLang === 'hi' ? 'उदा. Uttar Pradesh' : 'e.g. Uttar Pradesh (from Aadhaar)'}
+                    value={profile.state}
+                    onChange={(e) => handleFormChange('state', e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
+                  />
+                </div>
+
+                {/* District (ज़िला) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>{currentLang === 'hi' ? 'ज़िला (District)' : 'District (ज़िला)'}</span>
+                    {profile.district && (
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Aadhaar Back
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={currentLang === 'hi' ? 'उदा. Gorakhpur' : 'e.g. Gorakhpur (from Aadhaar)'}
+                    value={profile.district}
+                    onChange={(e) => handleFormChange('district', e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
+                  />
+                </div>
+
                 {/* Educational Qualification */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -464,7 +507,7 @@ export default function Home() {
                   </label>
                   <input
                     type="text"
-                    value={`${profile.profession} (${profile.professionHi || 'कुम्हार'})`}
+                    value={profile.profession ? `${profile.profession} (${profile.professionHi || 'कुम्हार'})` : 'Potter / Traditional Artisan'}
                     readOnly
                     className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
                   />

@@ -9,24 +9,24 @@ const STORAGE_KEYS = {
   FONT_SIZE: 'udyamsetu_font_size',
 };
 
-// Default seed profile (Sunita / Shanti Devi scenario from PRD & Pitch)
+// Default empty profile (User mandate: do not prefill data unless extracted from OCR or entered by user)
 export const DEFAULT_PROFILE: ApplicantProfile = {
-  name: 'Shanti Devi Kushwaha',
-  dob: '1988-08-14',
+  name: '',
+  dob: '',
   gender: 'Female',
-  category: 'OBC',
-  annualIncome: 120000,
-  state: 'Uttar Pradesh',
-  district: 'Gorakhpur',
+  category: 'General',
+  annualIncome: 0,
+  state: '',
+  district: '',
   areaType: 'Rural',
   education: '10th',
-  profession: 'Terracotta Potter',
-  professionHi: 'कुम्हार',
-  requiredCapital: 200000,
-  maskedAadhaar: 'XXXX-XXXX-3456',
-  casteCertificateNo: 'OBC-UP-2023-88219',
-  incomeCertificateNo: 'INC-UP-2024-55102',
-  marksPercentage: 68.5,
+  profession: '',
+  professionHi: '',
+  requiredCapital: 0,
+  maskedAadhaar: '',
+  casteCertificateNo: '',
+  incomeCertificateNo: '',
+  marksPercentage: 0,
 };
 
 export const DEFAULT_DOCUMENTS: DocumentRecord[] = [
@@ -34,28 +34,19 @@ export const DEFAULT_DOCUMENTS: DocumentRecord[] = [
     code: 'DOC_AADHAAR',
     name: 'Aadhaar Card',
     nameHi: 'आधार कार्ड',
-    isVerified: true,
-    verificationSource: 'RAPIDOCR',
-    referenceId: 'UIDAI-MASKED-3456',
-    verifiedAt: new Date().toISOString(),
+    isVerified: false,
   },
   {
     code: 'DOC_CASTE',
     name: 'Caste Certificate',
     nameHi: 'जाति प्रमाण पत्र',
-    isVerified: true,
-    verificationSource: 'DIGILOCKER',
-    referenceId: 'DL-OBC-88219',
-    verifiedAt: new Date().toISOString(),
+    isVerified: false,
   },
   {
     code: 'DOC_INCOME',
     name: 'Income Certificate',
     nameHi: 'आय प्रमाण पत्र',
-    isVerified: true,
-    verificationSource: 'RAPIDOCR',
-    referenceId: 'INC-2024-55102',
-    verifiedAt: new Date().toISOString(),
+    isVerified: false,
   },
   {
     code: 'DOC_RURAL',
@@ -67,10 +58,7 @@ export const DEFAULT_DOCUMENTS: DocumentRecord[] = [
     code: 'DOC_MARKSHEET',
     name: 'Class 10th Marksheet',
     nameHi: '10वीं अंकतालिका',
-    isVerified: true,
-    verificationSource: 'RAPIDOCR',
-    referenceId: 'UPBOARD-10-8842',
-    verifiedAt: new Date().toISOString(),
+    isVerified: false,
   },
 ];
 
