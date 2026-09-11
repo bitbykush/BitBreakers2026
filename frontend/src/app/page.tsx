@@ -116,7 +116,16 @@ export default function Home() {
     if (query && query.trim().length > 0) {
       setHasSearchedOrSelectedTrade(true);
     }
-    handleFormChange('profession', query);
+    const updated = StorageService.saveProfile({
+      profession: query,
+      professionHi: query,
+    });
+    setProfile(updated);
+
+    if (query && query.trim().length > 1) {
+      const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+      ApiService.matchSchemes(updated, verifiedDocs).then(setSchemes);
+    }
   };
 
   // Transition from Pathway 1 into Pathway 2
