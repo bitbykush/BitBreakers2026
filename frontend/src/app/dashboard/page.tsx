@@ -1,0 +1,241 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Header } from '@/components/common/Header';
+import { Footer } from '@/components/common/Footer';
+import { DigiLockerModal } from '@/components/kyc/DigiLockerModal';
+import { CommonAppFormat } from '@/components/caf/CommonAppFormat';
+import { CompareDrawer } from '@/components/compare/CompareDrawer';
+import { FinancialAnalysisDrawer } from '@/components/compare/FinancialAnalysisDrawer';
+import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
+import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
+import { ApiService } from '@/lib/api';
+import { SchemeMatch, ApplicantProfile, DigiLockerRecord } from '@/types';
+import { useDevHUD } from '@/hooks/useDevHUD';
+import {
+  FileText,
+  Star,
+  CheckCircle2,
+  AlertTriangle,
+  ShieldCheck,
+  SlidersHorizontal,
+  Banknote,
+  ArrowLeft,
+  ArrowRight,
+} from 'lucide-react';
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [currentLang, setCurrentLang] = useState<'en' | 'hi'>('en');
+  const [isLargerFont, setIsLargerFont] = useState(false);
+  const [profile, setProfile] = useState<ApplicantProfile>(DEFAULT_PROFILE);
+  const [schemes, setSchemes] = useState<SchemeMatch[]>([]);
+  const [selectedSchemeForAnalysis, setSelectedSchemeForAnalysis] = useState<SchemeMatch | null>(null);
+
+  const [isDigiLockerOpen, setIsDigiLockerOpen] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isFinancialAnalysisOpen, setIsFinancialAnalysisOpen] = useState(false);
+  const [isCafModalOpen, setIsCafModalOpen] = useState(false);
+  const [digiLockerRecord, setDigiLockerRecord] = useState<DigiLockerRecord | null>(null);
+
+  const { isOpen: isDevHudOpen, toggle: toggleDevHud, handleTripleTap } = useDevHUD();
+  const [ocrEngine, setOcrEngine] = useState<'AUTO' | 'RAPIDOCR' | 'GEMINI' | 'MOCK'>('AUTO');
+  const [matcherEngine, setMatcherEngine] = useState<'FASTEMBED' | 'MOCK'>('FASTEMBED');
+
+  useEffect(() => {
+    const saved = StorageService.getProfile();
+    const savedLang = StorageService.getLanguage();
+    const savedDl = StorageService.getDigiLockerState();
+    setProfile(saved);
+    setCurrentLang(savedLang);
+    setDigiLockerRecord(savedDl);
+
+    const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+    ApiService.matchSchemes(saved, verifiedDocs).then(setSchemes);
+  }, []);
+
+  return (
+    <div className="min-h-screen flex flex-col justify-between">
+      <Header
+        currentLang={currentLang}
+        onLangChange={(l) => {
+          setCurrentLang(l);
+          StorageService.setLanguage(l);
+        }}
+        isLargerFont={isLargerFont}
+        onToggleFont={() => setIsLargerFont((p) => !p)}
+        onOpenDigiLocker={() => setIsDigiLockerOpen(true)}
+        onTripleTapLogo={handleTripleTap}
+      />
+
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-950 transition"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Application Mode
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCafModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-indigo-950 text-white text-xs font-bold hover:bg-indigo-900 transition flex items-center gap-2 shadow"
+          >
+            <FileText className="w-4 h-4 text-orange-400" />
+            <span>Generate Common Application Format (CAF)</span>
+          </button>
+        </div>
+
+        {/* Summary Card */}
+        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300 mb-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping" />
+                Stage 3: Verified Welfare Allocations
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-indigo-950">
+                Ranked Welfare & Subsidy Compatibility Results
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600">
+              Personalized matches computed for {profile.name} ({profile.category} {profile.gender}) in {profile.district}, {profile.state}.
+            </p>
+          </div>
+        </div>
+
+        {/* Scheme Cards */}
+        <div className="space-y-5">
+          {schemes.map((scheme, idx) => (
+            <div
+              key={scheme.id}
+              className={`bg-white rounded-3xl p-6 sm:p-8 border-2 shadow-md relative overflow-hidden transition ${
+                idx === 0 ? 'border-emerald-500' : 'border-slate-200'
+              }`}
+            >
+              {idx === 0 && (
+                <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[11px] font-extrabold px-4 py-1 rounded-bl-2xl shadow-xs flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-current" /> TOP SUBSIDY MATCH
+                </div>
+              )}
+
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="bg-indigo-100 text-indigo-900 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                      {scheme.ministryEn}
+                    </span>
+                    <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                      100% Collateral-Free
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xl sm:text-2xl font-black text-indigo-950">
+                      {currentLang === 'hi' ? scheme.nameHi : scheme.nameEn}
+                    </h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                      {currentLang === 'hi' ? scheme.descriptionHi : scheme.descriptionEn}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-row lg:flex-col items-center justify-center bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center gap-2 lg:w-44 flex-shrink-0">
+                  <span className="text-3xl font-black text-indigo-950 font-mono">
+                    {scheme.compatibilityPercentage}%
+                  </span>
+                  <span className="text-xs font-bold text-slate-700">Match Compatibility</span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-3xl">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setIsCompareOpen(true)}
+                      className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-sm"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
+                      <span>Compare</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedSchemeForAnalysis(scheme);
+                        setIsFinancialAnalysisOpen(true);
+                      }}
+                      className="px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5"
+                    >
+                      <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Financial Breakdown</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCafModalOpen(true)}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2"
+                  >
+                    <FileText className="w-4 h-4 text-orange-400" />
+                    <span>Generate Bank Application (CAF)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      <DigiLockerModal
+        isOpen={isDigiLockerOpen}
+        onClose={() => setIsDigiLockerOpen(false)}
+        onVerified={(rec) => setDigiLockerRecord(rec)}
+        currentLang={currentLang}
+      />
+
+      <CompareDrawer
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        onProceedPathway2={() => router.push('/apply')}
+        currentLang={currentLang}
+      />
+
+      <FinancialAnalysisDrawer
+        isOpen={isFinancialAnalysisOpen}
+        onClose={() => setIsFinancialAnalysisOpen(false)}
+        scheme={selectedSchemeForAnalysis || schemes[0] || null}
+        profile={profile}
+        onProceedPathway2={() => router.push('/apply')}
+        currentLang={currentLang}
+      />
+
+      <CommonAppFormat
+        isOpen={isCafModalOpen}
+        onClose={() => setIsCafModalOpen(false)}
+        profile={profile}
+        selectedScheme={schemes[0] || null}
+        digiLockerRecord={digiLockerRecord}
+        currentLang={currentLang}
+      />
+
+      <DevDebugDrawer
+        isOpen={isDevHudOpen}
+        onToggle={toggleDevHud}
+        ocrEngine={ocrEngine}
+        setOcrEngine={setOcrEngine}
+        matcherEngine={matcherEngine}
+        setMatcherEngine={setMatcherEngine}
+        onResetSession={() => {
+          StorageService.clearSession();
+          setProfile(DEFAULT_PROFILE);
+        }}
+      />
+
+      <Footer currentLang={currentLang} />
+    </div>
+  );
+}
