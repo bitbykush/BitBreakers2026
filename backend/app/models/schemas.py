@@ -132,3 +132,44 @@ class QuickMatchResponse(BaseModel):
 class SchemeListResponse(BaseModel):
     total: int
     schemes: List[SchemeMatch]
+
+
+# ---------------------------------------------------------------------------
+# OCR & KYC Schemas
+# ---------------------------------------------------------------------------
+
+class OcrExtractedResponse(BaseModel):
+    doc_type: str = Field(..., description="Document type: AADHAAR | CASTE | INCOME | MARKSHEET")
+    name: Optional[str] = Field(None, description="Applicant Full Name extracted from document")
+    dob: Optional[str] = Field(None, description="Date of birth in DD/MM/YYYY format")
+    gender: Optional[str] = Field(None, description="Gender: MALE | FEMALE | TRANSGENDER")
+    masked_aadhaar: Optional[str] = Field(None, description="UIDAI Masked Aadhaar: XXXX-XXXX-1234")
+    pincode: Optional[str] = Field(None, description="6-digit postal pincode")
+    address: Optional[str] = Field(None, description="Residential address extracted from back of Aadhaar")
+    state: Optional[str] = Field(None, description="State extracted from back of Aadhaar")
+    district: Optional[str] = Field(None, description="District extracted from back of Aadhaar")
+    category: Optional[str] = Field(None, description="Caste / Social category: SC | ST | OBC | EWS | GENERAL")
+    annual_income: Optional[float] = Field(None, description="Annual income in INR")
+    financial_year: Optional[str] = Field(None, description="Financial assessment year (e.g. 2024-2025)")
+    certificate_number: Optional[str] = Field(None, description="Official certificate reference / serial number")
+    marks_percentage: Optional[float] = Field(None, description="Academic marks percentage")
+    highest_education: Optional[str] = Field(None, description="Qualification: 10TH_PASS | 12TH_PASS | GRADUATE | DIPLOMA")
+    confidence: float = Field(0.0, description="OCR confidence percentage (0-100)")
+    engine: str = Field("RapidOCR_ONNX", description="OCR engine used: RapidOCR_ONNX | Gemini_1.5_Flash | Mock")
+    needs_permission: bool = Field(False, description="True if local OCR confidence was low and requires user permission before calling Gemini")
+    prompt_message: Optional[str] = Field(None, description="Permission prompt text to display to the user")
+    can_use_gemini: bool = Field(False, description="Whether Gemini cloud AI fallback is available upon user approval")
+
+
+class DigiLockerVerifyRequest(BaseModel):
+    aadhaar_or_mobile: str = Field(..., description="Aadhaar number or Mobile number")
+    otp: str = Field(..., description="6-digit sandbox OTP (demo: 123456)")
+
+
+class DigiLockerVerifyResponse(BaseModel):
+    verified: bool = True
+    ref_id: str = Field("DL-2026-X8921", description="DigiLocker certificate verification ID")
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    verified_documents: List[str] = Field(default=["DOC_AADHAAR", "DOC_CASTE", "DOC_INCOME"])
+    aadhaar_or_mobile: str
+
