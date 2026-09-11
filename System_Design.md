@@ -1,5 +1,5 @@
 # System Design & Implementation Blueprints
-## Project: UdyamSetu AI (SIH-26092)
+## Project: Scheme Seva Kendra (योजना सेवा केंद्र) (SIH-26092)
 
 ---
 
@@ -8,12 +8,13 @@
 ```mermaid
 flowchart TD
     subgraph Client ["Client Layer (Next.js 14 Responsive PWA on Vercel)"]
-        P1["Pathway 1: 1-Tap Profession + Web Speech API"]
-        UpgradeBtn["Upgrade to Full Accuracy Banner"]
-        P2["Pathway 2: Assisted Multi-Step Form + Scholarships"]
+        P1["Pathway 1: 1-Tap Trade Chips + Web Speech API"]
+        BaselinePreview["Instant Baseline Match Preview (On Demand)"]
+        SchemeDetails["Scheme Details Dossier: /schemes/[id] (myScheme 8 Tabs & 10 FAQs)"]
+        P2["Pathway 2: Assisted Multi-Step Form + Scholarships (/apply)"]
         LocalStore[("Client LocalStorage: Zero-Login Session")]
         DevHUD["Hidden Dev Panel (Ctrl+Shift+D / Triple Tap)"]
-        CAFView["Common Application Format (CAF) A4 Print View"]
+        CAFView["Common Application Format (CAF) A4 Print View (/caf)"]
     end
 
     subgraph Backend ["Render Free Tier Backend (512MB RAM Budget, --workers 1)"]
@@ -31,8 +32,11 @@ flowchart TD
         GeminiFlash["Google Gemini 1.5 Flash Vision (API Fallback)"]
     end
 
-    P1 -->|Click Upgrade| P2
-    P1 & P2 <--> LocalStore
+    P1 -->|Select Trade / Search| BaselinePreview
+    BaselinePreview -->|Arrow Button [→]| SchemeDetails
+    BaselinePreview -->|Fill Custom Details| P2
+    SchemeDetails -->|Apply in Pathway 2| P2
+    P1 & P2 & SchemeDetails <--> LocalStore
     DevHUD -->|Toggle Engines / View RAM| DevMonitor
 
     P2 -->|Targeted Doc Upload| Resizer
@@ -473,3 +477,59 @@ export const DevDebugDrawer: React.FC = () => {
 │       │                      │ 100% free server! Thank you!"           │
 └───────┴──────────────────────┴─────────────────────────────────────────┘
 ```
+
+---
+
+## 6. Official Scheme Details Portal (`/schemes/[id]`) Architecture
+
+### 6.1. Three-Column Responsive Layout
+Modeled after the Government of India **myScheme.gov.in** portal:
+1. **Left Navigation Column (`lg:col-span-3`, Sticky)**:
+   - 8 standard sections: `Details`, `Benefits`, `Eligibility`, `Application Process`, `Documents Required`, `Frequently Asked Questions`, `Sources And References`, `Feedback`.
+   - ScrollSpy active tab tracking: Dynamically listens to viewport scroll position to highlight the active section with `border-l-4 border-blue-600 bg-blue-50 text-blue-800`.
+   - Smooth anchor scrolling on tab click.
+2. **Center Narrative & Accordion Column (`lg:col-span-6`)**:
+   - Official Ministry description (e.g. *National Solar Science Fellowship Programme (NSSFP)* under MNRE, launched Feb 2011).
+   - Core research highlights & host institute collaborations (IITs, IISc, NITs, Central Labs).
+   - 10 interactive FAQ accordions with independent expand/collapse states.
+   - Statutory required documents breakdown with issuing authority metadata.
+   - Thumbs-up / Thumbs-down feedback widget.
+3. **Right Sidebar Widgets (`lg:col-span-3`, Sticky)**:
+   - Financial Summary Card: Grant percentage, tenure, collateral exemption.
+   - **`Fill Custom Details & Apply`** CTA button: Routes the user straight into Pathway 2 (`/apply`) with pre-filled context.
+   - **News and Updates**: Live feed card with official government circular dates.
+   - **Share This Scheme**: One-click social links for WhatsApp, Telegram, X, and native clipboard copy with feedback toast.
+
+### 6.2. Scheme Data Model Extension (`SchemeMatch`)
+```typescript
+export interface SchemeFAQ {
+  question: string;
+  answer: string;
+}
+
+export interface SchemeMatch {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameHi: string;
+  ministryEn: string;
+  ministryHi: string;
+  descriptionEn: string;
+  descriptionHi: string;
+  compatibilityPercentage: number;
+  categoryBadge: string;
+  financials: SchemeFinancials;
+  requiredDocuments: string[];
+  verifiedDocuments: string[];
+  missingDocuments: string[];
+  eligibilityHighlights: string[];
+  nodalAgency: string;
+  tags?: string[];
+  benefits?: string[];
+  eligibilityCriteria?: string[];
+  applicationProcess?: string[];
+  faqs?: SchemeFAQ[];
+  sourcesAndReferences?: { title: string; url?: string }[];
+}
+```
+
