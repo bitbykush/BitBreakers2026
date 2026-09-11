@@ -14,12 +14,15 @@
 │ • Next.js 14 mobile shell (360px) │ • Single-worker FastAPI container  │
 │ • Pathway 1 -> Pathway 2 upgrade  │ • FastEmbed ONNX embedding service │
 │   seamless state carryover        │ • RapidOCR + Image Downsampler     │
-│ • Official myScheme Details       │ • Targeted Extractors (4 docs)     │
-│   Portal (/schemes/[id]) with     │ • Hybrid Regex + Positional Heurist│
-│   8 tabs, ScrollSpy, 10 FAQs      │ • Gemini 1.5 Flash fallback router │
-│ • Instant Baseline Match Preview  │ • Dynamic Missing Document Engine  │
-│ • Web Speech STT hook (Hindi/EN)  │ • Mock DigiLocker eKYC API         │
-│ • Document-specific upload tabs   │ • Render 512MB Dockerfile deploy   │
+│ • Android Accessibility Suite     │ • Targeted Extractors (4 docs)     │
+│   (TalkBack, High Contrast,       │ • Hybrid Regex + Positional Heurist│
+│   Magnifier Lens, Reading Guide)  │ • Gemini 1.5 Flash fallback router │
+│ • Official myScheme Details       │ • Dynamic Missing Document Engine  │
+│   Portal (/schemes/[id]) with     │ • Mock DigiLocker eKYC API         │
+│   8 tabs, ScrollSpy, 10 FAQs      │ • Render 512MB Dockerfile deploy   │
+│ • Instant Baseline Match Preview  │                                    │
+│ • Web Speech STT hook (Hindi/EN)  │                                    │
+│ • Document-specific upload tabs   │                                    │
 │ • Dynamic Scheme Cards (0-100%)   │                                    │
 │ • Side-by-Side Compare Drawer     │                                    │
 │ • Financial Breakdown Drawer      │                                    │
@@ -71,10 +74,14 @@
          Build official myScheme.gov.in Scheme Details Portal (/schemes/[id])
          with 8 navigation tabs, ScrollSpy, 10 interactive FAQs, and share links.
          Build Side-by-Side Scheme Comparison Drawer & Financial Breakdown Drawer.
+         Build Android-Style Accessibility Suite: TalkBack screen reader (Web Speech Synthesis),
+         WCAG AAA High Contrast (Yellow-on-black, Monochrome), Magnifier 2x spotlight lens,
+         cursor reading guide ruler, and single unified header button.
          Build Hidden Dev HUD (`Ctrl + Shift + D` / triple tap logo).
   DEV 2: Build Dynamic Document Resolver: checks `uploaded_document_codes` and
          omits them from the scheme checklist. Build `/api/v1/dev/health`.
-  MILESTONE 4: Dev HUD allows toggling RapidOCR vs Gemini vs Mock mode live.
+  MILESTONE 4: Dev HUD allows toggling RapidOCR vs Gemini vs Mock mode live;
+               Accessibility Suite operational with TalkBack & High Contrast.
 
   HOURS 24:00 - 30:00 | SPRINT BLOCK 5: COMMON APP FORMAT & DIGILOCKER E-KYC
   ════════════════════════════════════════════════════════════════════════════

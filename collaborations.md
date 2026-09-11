@@ -22,7 +22,10 @@ To ensure zero merge conflicts during parallel coding, file ownership is strictl
 │ • Owns: `frontend/`               │ • Owns: `backend/`                 │
 │ • UI components, styles, hooks    │ • FastAPI routes, models, schemas  │
 │ • Web Speech API, LocalStorage    │ • FastEmbed, RapidOCR, Gemini API  │
-│ • Official myScheme Details       │ • Dynamic Document Engine, Docker  │
+│ • Android Accessibility Suite:    │ • Targeted Extractors (Aadhaar,    │
+│   TalkBack, High Contrast AAA,    │   Caste, Income, Marksheet)        │
+│   Magnifier, Single Header Btn    │ • Dynamic Document Engine, Docker  │
+│ • Official myScheme Details       │ • DigiLocker mock eKYC endpoint    │
 │   Portal (/schemes/[id]) with     │                                    │
 │   8 tabs, ScrollSpy, 10 FAQs      │                                    │
 │ • Baseline Matches & Trade Pills  │                                    │

@@ -133,3 +133,34 @@ Replicates the official National Government Portal layout (`myScheme.gov.in`) ac
   - *News and Updates* live notifications module.
   - *Share* scheme buttons: WhatsApp, Telegram, X (Twitter), and Copy Link with clipboard toast confirmation.
 
+---
+
+## 8. Android-Style Accessibility Suite (TalkBack, High Contrast & Magnifier)
+
+To empower visually impaired, elderly, and rural neo-literate citizens, Scheme Seva Kendra includes an Android OS-grade accessibility suite operating with zero server overhead:
+
+### 8.1 Single Unified Navigation Trigger
+- **Header Button**: Exactly one unified button in the main header (`♿ Accessibility | सुगमता`), replacing legacy isolated font toggles and preventing screen clutter.
+- **Keyboard Shortcut**: `Alt + A` opens the Accessibility Menu instantly; `Alt + T` toggles TalkBack; `Esc` stops speech playback.
+
+### 8.2 Android Quick Settings Accessibility Menu
+- **Card-Based Drawer**: Modeled after Android's Accessibility Quick Settings tile:
+  - **TalkBack Screen Reader**: Built-in speech synthesis with speed selector (0.75x, 1.0x, 1.25x, 1.5x) and a "Test Voice" preview.
+  - **High Contrast Colors**: Standard, Yellow-on-Black (WCAG AAA Dark Contrast), and Stark Monochrome Black-on-White.
+  - **Magnification & Zoom**: Global viewport scaling (100%, 125%, 150%, 175%, 200%) and interactive 2x Magnifier Lens toggle.
+  - **Text Size & Dyslexia**: Font tiers (Normal, Large A+, Extra Large A++) and dyslexia-friendly typography.
+  - **Reading Guide**: Cursor-following horizontal focus ruler for line-by-line reading.
+  - **Reset Defaults**: Single click resets all accessibility preferences.
+
+### 8.3 TalkBack Built-in Screen Reader Engine
+- **Web Speech Synthesis**: Uses browser-native `window.speechSynthesis` (0MB backend memory).
+- **Intelligent Dual-Language Detection**: Prioritizes `hi-IN` Hindi voices when the portal is in Hindi, and `en-IN` / Indian English voices in English.
+- **Interactive Focus & Hover Listener**: Moving the cursor or tabbing through the page automatically reads aloud headings, buttons, form inputs, scheme cards, and eligibility highlights.
+- **Visual Focus Ring**: Highlights speaking elements with a high-visibility glowing yellow ring (`.talkback-speaking-outline`).
+- **Floating Audio Controller Bar**: Bottom controller displaying the live spoken sentence with Pause, Resume, Stop (`Esc`), Speed multiplier, and Turn Off controls.
+
+### 8.4 Screen Magnifier & Reading Guide
+- **Magnifier Lens**: Interactive 2x circular spotlight following the cursor/touch to inspect fine print, statutory conditions, and financial subsidy splits.
+- **Reading Guide**: Horizontal highlight ruler bar following vertical cursor movements to prevent skipping lines.
+
+

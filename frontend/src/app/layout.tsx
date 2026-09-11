@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AccessibilityShell } from '@/components/accessibility';
 
 export const metadata: Metadata = {
   title: 'Scheme Seva Kendra (योजना सेवा केंद्र) — National Welfare & Subsidy Discovery',
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full flex flex-col justify-between bg-slate-100 text-slate-900 font-sans antialiased">
-        {children}
+        <AccessibilityShell>
+          {children}
+        </AccessibilityShell>
       </body>
     </html>
   );
