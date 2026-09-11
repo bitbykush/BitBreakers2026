@@ -24,9 +24,87 @@
 .wave-bar:nth-child(4) { animation-delay: 0.54s; }
 .wave-bar:nth-child(5) { animation-delay: 0.24s; }
 
-/* Accessibility high-contrast & font-scaling */
+/* Accessibility high-contrast, font-scaling & TalkBack focus */
 .a-plus {
   font-size: 112% !important;
+}
+
+/* Yellow-on-Black High Contrast (WCAG AAA) */
+html.a11y-contrast-yellow body {
+  background-color: #000000 !important;
+  color: #ffe600 !important;
+}
+html.a11y-contrast-yellow .bg-white,
+html.a11y-contrast-yellow .bg-slate-50,
+html.a11y-contrast-yellow .bg-slate-100,
+html.a11y-contrast-yellow .bg-indigo-50,
+html.a11y-contrast-yellow .bg-orange-50 {
+  background-color: #0c0c0c !important;
+  color: #ffe600 !important;
+  border-color: #ffe600 !important;
+}
+html.a11y-contrast-yellow .text-slate-900,
+html.a11y-contrast-yellow .text-slate-800,
+html.a11y-contrast-yellow .text-slate-700,
+html.a11y-contrast-yellow .text-indigo-950,
+html.a11y-contrast-yellow .text-indigo-900 {
+  color: #ffe600 !important;
+}
+html.a11y-contrast-yellow .text-slate-600,
+html.a11y-contrast-yellow .text-slate-500,
+html.a11y-contrast-yellow .text-slate-400 {
+  color: #ffffff !important;
+}
+html.a11y-contrast-yellow button,
+html.a11y-contrast-yellow input,
+html.a11y-contrast-yellow select,
+html.a11y-contrast-yellow textarea {
+  border: 2px solid #ffe600 !important;
+  color: #ffe600 !important;
+}
+html.a11y-contrast-yellow .border-slate-200,
+html.a11y-contrast-yellow .border-slate-300 {
+  border-color: #ffe600 !important;
+}
+
+/* Stark Monochrome High Contrast */
+html.a11y-contrast-mono body {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+html.a11y-contrast-mono .bg-indigo-950,
+html.a11y-contrast-mono .bg-indigo-900,
+html.a11y-contrast-mono .bg-slate-900 {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+html.a11y-contrast-mono button,
+html.a11y-contrast-mono input,
+html.a11y-contrast-mono select {
+  border: 2px solid #000000 !important;
+}
+
+/* Font Sizing Tiers */
+html.a11y-font-large body {
+  font-size: 114% !important;
+}
+html.a11y-font-xlarge body {
+  font-size: 128% !important;
+}
+
+/* Dyslexia Typography Enhancements */
+html.a11y-dyslexia body {
+  letter-spacing: 0.06em !important;
+  word-spacing: 0.12em !important;
+  line-height: 1.8 !important;
+}
+
+/* TalkBack Screen Reader Active Outline */
+.talkback-speaking-outline {
+  outline: 3px solid #ffe600 !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 16px rgba(255, 230, 0, 0.9) !important;
+  transition: outline 0.15s ease-in-out !important;
 }
 
 /* Common Application Format (CAF) A4 Print Styles */
