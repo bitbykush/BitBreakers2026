@@ -60,6 +60,12 @@ export interface SchemeMatch {
   missingDocuments: string[];
   eligibilityHighlights: string[];
   nodalAgency: string;
+  tags?: string[];
+  benefits?: string[];
+  eligibilityCriteria?: string[];
+  applicationProcess?: string[];
+  faqs?: { question: string; answer: string }[];
+  sourcesAndReferences?: { title: string; url?: string }[];
 }
 
 export interface OcrExtractedData {

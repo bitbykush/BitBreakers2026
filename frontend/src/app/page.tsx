@@ -7,6 +7,7 @@ import {
   SlidersHorizontal,
   Banknote,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
@@ -21,7 +22,6 @@ import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { TradeSearchAndPills } from '@/components/pathway1/TradeSearchAndPills';
 import { BaselineMatchPreview } from '@/components/pathway1/BaselineMatchPreview';
-import { UpgradeBanner } from '@/components/pathway1/UpgradeBanner';
 import { TargetedOcrUpload } from '@/components/ocr/TargetedOcrUpload';
 import { DigiLockerModal } from '@/components/kyc/DigiLockerModal';
 import { CompareDrawer } from '@/components/compare/CompareDrawer';
@@ -212,82 +212,19 @@ export default function Home() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Explicit Pathway Mode Switcher */}
-        <section className="bg-white rounded-2xl p-2 sm:p-2.5 border border-slate-200 shadow-sm max-w-4xl mx-auto no-print">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {/* Pathway 1 Button */}
+        {/* Back navigation button - only visible when in Pathway 2 to return to Pathway 1 */}
+        {pathwayMode === 'pathway2' && (
+          <div className="max-w-4xl mx-auto no-print">
             <button
               type="button"
               onClick={() => setPathwayMode('pathway1')}
-              className={`relative flex items-start sm:items-center gap-3 p-3 sm:p-3.5 rounded-xl text-left transition-all ${
-                pathwayMode === 'pathway1'
-                  ? 'border-2 border-orange-500 bg-orange-50/60 shadow-xs'
-                  : 'border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80'
-              }`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer active:scale-95"
             >
-              <div className="w-9 h-9 rounded-lg bg-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900 text-sm">
-                    {currentLang === 'hi'
-                      ? 'पाथवे 1: 1-क्लिक त्वरित खोज'
-                      : 'Pathway 1: Zero-Paperwork 1-Tap Discovery'}
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                    1-क्लिक खोज
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Instant match • No login required • Voice & trade bubbles
-                </p>
-              </div>
-              <span
-                className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 sm:mt-0 ${
-                  pathwayMode === 'pathway1' ? 'bg-orange-500' : 'bg-transparent border border-slate-300'
-                }`}
-              />
-            </button>
-
-            {/* Pathway 2 Button */}
-            <button
-              type="button"
-              onClick={() => setPathwayMode('pathway2')}
-              className={`relative flex items-start sm:items-center gap-3 p-3 sm:p-3.5 rounded-xl text-left transition-all ${
-                pathwayMode === 'pathway2' || pathwayMode === 'dashboard'
-                  ? 'border-2 border-indigo-600 bg-indigo-50/60 shadow-xs'
-                  : 'border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80'
-              }`}
-            >
-              <div className="w-9 h-9 rounded-lg bg-indigo-900 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                <FileCheck2 className="w-5 h-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900 text-sm">
-                    {currentLang === 'hi'
-                      ? 'पाथवे 2: विस्तृत फॉर्म एवं ई-केवाईसी'
-                      : 'Pathway 2: Assisted eKYC & Form Application'}
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                    विस्तृत फॉर्म
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Aadhaar OCR scan • 95%+ accuracy • Bank-ready CAF dossier
-                </p>
-              </div>
-              <span
-                className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 sm:mt-0 ${
-                  pathwayMode === 'pathway2' || pathwayMode === 'dashboard'
-                    ? 'bg-indigo-600'
-                    : 'bg-transparent border border-slate-300'
-                }`}
-              />
+              <ArrowLeft className="w-4 h-4 text-orange-500" />
+              <span>{currentLang === 'hi' ? 'वापस योजना खोज (पाथवे 1) पर जाएं' : 'Back to Scheme Discovery (Pathway 1)'}</span>
             </button>
           </div>
-        </section>
+        )}
 
         {/* ========================================================================= */}
         {/* SCREEN 1: PATHWAY 1 (ZERO-PAPERWORK 1-TAP & VOICE DISCOVERY)             */}
@@ -309,15 +246,13 @@ export default function Home() {
                   currentLang={currentLang}
                   selectedTradeName={`${profile.profession} (${profile.professionHi || 'कुम्हार'})`}
                   schemes={schemes}
+                  onFillCustomDetails={handleSwitchToPathway2}
                   onOpenCompare={() => setIsCompareOpen(true)}
                   onOpenFinancialAnalysis={handleOpenFinancialAnalysis}
                   onSwitchToPathway2={handleSwitchToPathway2}
                 />
               </div>
             )}
-
-            {/* Upgrade Banner */}
-            <UpgradeBanner currentLang={currentLang} onSwitchToPathway2={handleSwitchToPathway2} />
           </section>
         )}
 

@@ -1,22 +1,25 @@
 'use client';
 
 import React from 'react';
-import { SlidersHorizontal, Info, Banknote, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { Info, ShieldCheck, PenSquare, ArrowRight } from 'lucide-react';
 import { SchemeMatch } from '@/types';
 
 interface BaselineMatchPreviewProps {
   currentLang: 'en' | 'hi';
   selectedTradeName: string;
   schemes: SchemeMatch[];
-  onOpenCompare: () => void;
-  onOpenFinancialAnalysis: (schemeId: string) => void;
-  onSwitchToPathway2: () => void;
+  onFillCustomDetails: (schemeId: string) => void;
+  onOpenCompare?: () => void;
+  onOpenFinancialAnalysis?: (schemeId: string) => void;
+  onSwitchToPathway2?: () => void;
 }
 
 export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
   currentLang,
   selectedTradeName,
   schemes,
+  onFillCustomDetails,
   onOpenCompare,
   onOpenFinancialAnalysis,
   onSwitchToPathway2,
@@ -86,14 +89,24 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
               </span>
 
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Fill Custom Details -> Goes to Pathway 2 */}
                 <button
                   type="button"
-                  onClick={() => onOpenFinancialAnalysis(scheme.id)}
-                  className="text-xs font-bold text-indigo-900 hover:text-orange-600 bg-indigo-50 hover:bg-orange-50 px-2.5 py-1 rounded-lg border border-indigo-200/80 transition flex items-center gap-1"
+                  onClick={() => onFillCustomDetails(scheme.id)}
+                  className="text-xs font-bold text-white bg-indigo-950 hover:bg-indigo-900 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
                 >
-                  <Banknote className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{currentLang === 'hi' ? 'वित्तीय विश्लेषण' : 'Financial Breakdown'}</span>
+                  <PenSquare className="w-3.5 h-3.5 text-orange-300" />
+                  <span>{currentLang === 'hi' ? 'कस्टम विवरण भरें' : 'Fill Custom Details'}</span>
                 </button>
+
+                {/* Arrow Button -> Opens new Scheme Details page */}
+                <Link
+                  href={`/schemes/${scheme.id}`}
+                  title={currentLang === 'hi' ? 'योजना का पूरा विवरण एवं पात्रता देखें' : 'View Scheme Details & Eligibility'}
+                  className="p-1.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-800 border border-orange-300 transition flex items-center justify-center group active:scale-95"
+                >
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
               </div>
             </div>
           </div>

@@ -2,6 +2,103 @@ import { SchemeMatch } from '../types';
 
 export const MOCK_SCHEMES: SchemeMatch[] = [
   {
+    id: 'nssfp',
+    code: 'NSSFP',
+    nameEn: 'National Solar Science Fellowship Programme',
+    nameHi: 'राष्ट्रीय सौर विज्ञान फेलोशिप कार्यक्रम',
+    ministryEn: 'Ministry of New and Renewable Energy',
+    ministryHi: 'नवीन और नवीकरणीय ऊर्जा मंत्रालय',
+    descriptionEn: 'The “National Solar Science Fellowship Programme” of the Ministry of New & Renewable Energy was launched in February 2011. The programme is meant for an Indian Scientist desirous of working in the forefront areas of solar energy science, engineering, and technology with a focus on science, technology, and product development in collaboration with selected prestigious institutions in India. The aim of the National Solar Science Fellowship Programme is to provide a platform to top quality scientists and engineers in the area of solar energy research, to use and expand the resources available at the identified schools/ institutions in the country and abroad to address the complex problems of solar energy utilization for various end uses including power generation.',
+    descriptionHi: 'नवीन एवं नवीकरणीय ऊर्जा मंत्रालय का "राष्ट्रीय सौर विज्ञान फेलोशिप कार्यक्रम" फरवरी 2011 में शुरू किया गया था। यह कार्यक्रम सौर ऊर्जा विज्ञान, इंजीनियरिंग और प्रौद्योगिकी के क्षेत्र में अनुसंधान एवं विकास कार्य करने वाले भारतीय वैज्ञानिकों के लिए है।',
+    compatibilityPercentage: 96.0,
+    categoryBadge: 'FELLOWSHIP & RESEARCH',
+    tags: ['Education & Learning', 'Science & Technology', 'Renewable Energy'],
+    financials: {
+      grantSubsidyPercentage: 100,
+      maxGrantAmount: 3600000,
+      loanPercentage: 0,
+      promoterMarginPercentage: 0,
+      collateralRequired: false,
+    },
+    requiredDocuments: ['DOC_AADHAAR', 'DOC_MARKSHEET', 'DOC_PROJECT_REPORT', 'DOC_CASTE'],
+    verifiedDocuments: ['DOC_AADHAAR', 'DOC_MARKSHEET'],
+    missingDocuments: ['DOC_PROJECT_REPORT'],
+    eligibilityHighlights: [
+      'Fellowship grant of ₹1,00,000/month + ₹5,00,000/year research contingency',
+      'Open to Indian Scientists & Engineers with Ph.D. or M.Tech./M.S.',
+      'Collaboration with premier institutions (IITs, IISc, NITs, Central Labs)',
+    ],
+    nodalAgency: 'Ministry of New & Renewable Energy (MNRE), Govt of India',
+    benefits: [
+      'Monthly Fellowship Grant of ₹1,00,000 per month for selected scientists and engineers.',
+      'Annual Research Contingency Grant of up to ₹5,00,000 per year for project equipment, consumables, and international publications.',
+      'Institutional overhead support grant to host universities and national laboratories.',
+      'Tenure of fellowship for 3 years, extendable up to 2 additional years based on performance review.',
+      'Access to top scientific infrastructure across premier institutions in India and abroad.',
+    ],
+    eligibilityCriteria: [
+      'Applicant must be an Indian citizen.',
+      'Must possess a Ph.D. or M.Tech./M.S. in engineering, science, or allied disciplines.',
+      'Must have demonstrated research & development track record in the forefront areas of solar energy.',
+      'Candidates from all categories (General, OBC, SC, ST, EWS) are eligible to apply.',
+      'Identified host institution in India willing to provide laboratory facilities and research environment.',
+    ],
+    applicationProcess: [
+      'Step 1: Obtain the official application proforma from the Ministry of New & Renewable Energy (MNRE) portal (mnre.gov.in).',
+      'Step 2: Prepare a comprehensive research proposal focusing on solar energy science, engineering, or technology.',
+      'Step 3: Secure formal endorsement from the Head of the identified host institution in India.',
+      'Step 4: Submit the complete application dossier with verified educational degrees, research publications, and identity proofs.',
+      'Step 5: Review and shortlisting by the National Solar Science Fellowship Search-cum-Selection Committee, followed by final selection interview.',
+    ],
+    faqs: [
+      {
+        question: 'What is the aim of the scheme?',
+        answer: 'The aim of the National Solar Science Fellowship Programme is to provide a platform to top quality scientists and engineers in the area of solar energy research, to use and expand the resources available at the identified schools/ institutions in the country and abroad to address the complex problems of solar energy utilization for various end uses including power generation.',
+      },
+      {
+        question: 'Which department has launched this scheme?',
+        answer: 'The scheme has been launched by the Ministry of New and Renewable Energy (MNRE), Government of India.',
+      },
+      {
+        question: 'When was this scheme launched?',
+        answer: 'The National Solar Science Fellowship Programme was launched in February 2011.',
+      },
+      {
+        question: 'Who is eligible to get the benefits under the scheme?',
+        answer: 'The programme is meant for an Indian Scientist desirous of working in the forefront areas of solar energy science, engineering, and technology with a focus on science, technology, and product development in collaboration with selected prestigious institutions in India.',
+      },
+      {
+        question: 'Can a general category applicant be eligible to apply under this scheme?',
+        answer: 'Yes, general category applicants are fully eligible to apply under this scheme, along with applicants from all other categories (OBC, SC, ST, EWS), provided they satisfy the technical qualification and research requirements.',
+      },
+      {
+        question: 'What is the minimum qualification required to apply under the scheme?',
+        answer: 'Applicants must possess a Ph.D. or an M.Tech./M.S. degree in engineering, science, or allied fields with a demonstrable background and track record of research in the area of solar energy.',
+      },
+      {
+        question: 'Can an M.Tech. or M.S. degree holder candidate be eligible to apply under the scheme?',
+        answer: 'Yes, an M.Tech. or M.S. degree holder candidate is eligible to apply under the scheme, provided they possess relevant research competence and background in solar energy science or technology.',
+      },
+      {
+        question: 'Is it mandatory for a candidate to have an appropriate background in academics and experience in R&D in the area of solar energy?',
+        answer: 'Yes, it is mandatory for candidates to have an appropriate background in academics and relevant research & development experience in the area of solar energy science and technology.',
+      },
+      {
+        question: 'Will there be any age bar for the candidates to apply under the programme?',
+        answer: 'Candidates should ordinarily be below 35-40 years of age at the time of application, with applicable relaxations for reserved categories (SC/ST/OBC/Women/PwD) per Government of India guidelines.',
+      },
+      {
+        question: 'What is the benefit of the scheme?',
+        answer: 'The scheme provides a monthly fellowship stipend of ₹1,00,000, an annual research contingency grant of up to ₹5,00,000, overhead support to host institutions, and access to leading national labs and academic networks.',
+      },
+    ],
+    sourcesAndReferences: [
+      { title: 'Ministry of New & Renewable Energy (MNRE) Official Portal', url: 'https://mnre.gov.in' },
+      { title: 'myScheme Government of India Portal', url: 'https://www.myscheme.gov.in/schemes/nssfp' },
+      { title: 'National Institute of Solar Energy (NISE)', url: 'https://nise.res.in' },
+    ],
+  },
+  {
     id: 'pm-egp',
     code: 'PMEGP',
     nameEn: "Prime Minister's Employment Generation Programme (PMEGP)",
@@ -12,6 +109,7 @@ export const MOCK_SCHEMES: SchemeMatch[] = [
     descriptionHi: 'विनिर्माण एवं सेवा क्षेत्रों में नए सूक्ष्म उद्यम स्थापित करने के लिए क्रेडिट-लिंक्ड पूंजी सब्सिडी योजना।',
     compatibilityPercentage: 94.5,
     categoryBadge: 'TOP SUBSIDY MATCH',
+    tags: ['Business & Entrepreneurship', 'Financial Services', 'Manufacturing'],
     financials: {
       grantSubsidyPercentage: 35,
       maxGrantAmount: 1750000,
@@ -30,6 +128,43 @@ export const MOCK_SCHEMES: SchemeMatch[] = [
       '100% collateral-free under CGTMSE cover',
     ],
     nodalAgency: 'Khadi & Village Industries Commission (KVIC) / DIC Gorakhpur',
+    benefits: [
+      'Direct non-refundable capital subsidy up to 35% of total project cost (up to ₹17.5 Lakhs for manufacturing).',
+      'Only 5% to 10% beneficiary promoter contribution needed.',
+      'Bank term loan and working capital coverage up to 90% without third-party guarantee.',
+      'Covered under CGTMSE credit guarantee with zero collateral requirement.',
+    ],
+    eligibilityCriteria: [
+      'Any individual above 18 years of age.',
+      'At least 8th standard pass for projects costing above ₹10 Lakh in manufacturing or above ₹5 Lakh in service sector.',
+      'Only new micro-enterprise projects are eligible; existing units not eligible.',
+      'Special category beneficiaries (SC, ST, OBC, Minorities, Women, Ex-servicemen, Differently-abled) receive 35% rural subsidy.',
+    ],
+    applicationProcess: [
+      'Step 1: Register on the KVIC / PMEGP e-Portal (kviconline.gov.in).',
+      'Step 2: Fill online Common Application Form and upload Aadhaar, Caste, and DPR.',
+      'Step 3: Application verified by District Industries Centre (DIC) / KVIC Task Force.',
+      'Step 4: Forwarding of scrutinized dossier to preferred financing bank.',
+      'Step 5: Sanction of loan, disbursement of subsidy into TDR account, and EDP training.',
+    ],
+    faqs: [
+      {
+        question: 'What is the maximum project cost eligible under PMEGP?',
+        answer: 'The maximum cost of the project/unit eligible for subsidy is ₹50 Lakhs in the manufacturing sector and ₹20 Lakhs in the service sector.',
+      },
+      {
+        question: 'Who provides the subsidy under PMEGP?',
+        answer: 'The capital subsidy is routed through KVIC as the nodal agency directly into the beneficiary bank loan account.',
+      },
+      {
+        question: 'Is collateral security required for PMEGP loan?',
+        answer: 'No collateral security or third-party guarantee is required for loans up to ₹10 Lakhs under CGTMSE coverage.',
+      },
+    ],
+    sourcesAndReferences: [
+      { title: 'KVIC Online Official Portal', url: 'https://www.kviconline.gov.in' },
+      { title: 'Ministry of MSME Official Website', url: 'https://msme.gov.in' },
+    ],
   },
   {
     id: 'pm-vishwakarma',
@@ -42,6 +177,7 @@ export const MOCK_SCHEMES: SchemeMatch[] = [
     descriptionHi: '18 पारंपरिक व्यवसायों में लगे कारीगरों और शिल्पकारों के लिए टूलकिट और 5% रियायती ब्याज पर ऋण।',
     compatibilityPercentage: 91.2,
     categoryBadge: 'ARTISAN DEDICATED',
+    tags: ['Artisans & Craftsmen', 'Skill Development', 'Financial Support'],
     financials: {
       grantSubsidyPercentage: 15,
       maxGrantAmount: 15000,
@@ -60,6 +196,40 @@ export const MOCK_SCHEMES: SchemeMatch[] = [
       '5-day basic skill training with ₹500/day stipend',
     ],
     nodalAgency: 'District Industries Centre (DIC) & Nodal Banks',
+    benefits: [
+      'Recognition as Vishwakarma through PM Vishwakarma Certificate and ID Card.',
+      'Skill upgradation with basic 5-7 days training with stipend of ₹500/day.',
+      'Toolkit incentive e-voucher worth ₹15,000 to purchase modern tools.',
+      'Collateral-free enterprise loan: Tranche 1 up to ₹1,00,000 and Tranche 2 up to ₹2,00,000 at concessional interest rate of 5%.',
+      'Incentive for digital transactions up to ₹100 per month.',
+    ],
+    eligibilityCriteria: [
+      'Artisan or craftsperson working with hands and tools in one of the 18 specified family-based traditional trades.',
+      'Minimum age of 18 years on the date of application.',
+      'Should not have availed loans under similar credit-based schemes like PMEGP, PM SVANidhi, Mudra in past 5 years.',
+      'Only one member per family is eligible to receive benefits.',
+    ],
+    applicationProcess: [
+      'Step 1: Free biometric registration at nearest Common Services Centre (CSC).',
+      'Step 2: Gram Panchayat / ULB level verification of trade authenticity.',
+      'Step 3: District Implementation Committee (DIC) screening and approval.',
+      'Step 4: Issuance of PM Vishwakarma digital ID and toolkit e-voucher.',
+      'Step 5: Completion of basic training and direct credit disbursement into bank account.',
+    ],
+    faqs: [
+      {
+        question: 'Which trades are eligible under PM Vishwakarma?',
+        answer: '18 traditional trades including Carpenter, Blacksmith, Potter, Sculptor, Cobbler, Tailor, Basket Weaver, Barber, Washerman, and others.',
+      },
+      {
+        question: 'What is the interest rate charged on PM Vishwakarma loans?',
+        answer: 'The interest rate charged to the beneficiary is fixed at a concessional rate of 5% per annum, with the remaining interest subvention funded by the Government of India.',
+      },
+    ],
+    sourcesAndReferences: [
+      { title: 'PM Vishwakarma Official Portal', url: 'https://pmvishwakarma.gov.in' },
+      { title: 'Ministry of MSME Portal', url: 'https://msme.gov.in' },
+    ],
   },
   {
     id: 'pm-svanidhi',
@@ -190,6 +360,7 @@ export const TRADE_PRESETS = [
   { nameEn: 'Carpentry & Woodwork', nameHi: 'बढ़ई व काष्ठकला', icon: '🪚', category: 'Artisan' },
   { nameEn: 'Mechanic & EV Repair', nameHi: 'मैकेनिक व वाहन मरम्मत', icon: '🛵', category: 'Services' },
   { nameEn: 'Student & Scholar', nameHi: 'छात्रवृत्ति व पढ़ाई', icon: '📚', category: 'Education' },
+  { nameEn: 'Solar & Renewable Energy', nameHi: 'सौर एवं नवीकरणीय ऊर्जा', icon: '☀️', category: 'Energy & Research' },
   { nameEn: 'Blacksmith / Lohar', nameHi: 'लोहार व धातु शिल्प', icon: '🔨', category: 'Artisan' },
   { nameEn: 'Basket & Bamboo Weaver', nameHi: 'बांस व टोकरी बुनकर', icon: '🧺', category: 'Artisan' },
   { nameEn: 'Leather & Footwear', nameHi: 'चर्मकार व जूता निर्माण', icon: '👞', category: 'Artisan' },
