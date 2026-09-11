@@ -5,7 +5,7 @@ import { ScanLine, ArrowRightCircle, ArrowRight } from 'lucide-react';
 
 interface UpgradeBannerProps {
   currentLang: 'en' | 'hi';
-  onSwitchToPathway2: () => void;
+  onSwitchToPathway2?: () => void;
 }
 
 export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({ currentLang, onSwitchToPathway2 }) => {
@@ -33,14 +33,16 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({ currentLang, onSwi
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onSwitchToPathway2}
-        className="w-full md:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm sm:text-base shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
-      >
-        <span>{currentLang === 'hi' ? 'विस्तृत मोड पर जाएं' : 'Switch to Pathway 2'}</span>
-        <ArrowRight className="w-5 h-5" />
-      </button>
+      {onSwitchToPathway2 && (
+        <button
+          type="button"
+          onClick={onSwitchToPathway2}
+          className="w-full md:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm sm:text-base shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+        >
+          <span>{currentLang === 'hi' ? 'विस्तृत मोड पर जाएं' : 'Switch to Pathway 2'}</span>
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 };

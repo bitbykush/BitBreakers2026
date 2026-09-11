@@ -9,7 +9,7 @@ interface HeaderProps {
   onLangChange: (lang: 'en' | 'hi') => void;
   isLargerFont: boolean;
   onToggleFont: () => void;
-  onOpenDigiLocker: () => void;
+  onOpenDigiLocker?: () => void;
   onTripleTapLogo?: () => void;
 }
 

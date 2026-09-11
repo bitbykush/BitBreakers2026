@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 /.pnp
 .pnp.js
@@ -39,3 +39,5 @@ Thumbs.db
 
 # Agent local cache & temporary files
 .system_generated/
+*.tsbuildinfo
+

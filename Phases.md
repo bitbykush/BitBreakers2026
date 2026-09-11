@@ -1,5 +1,5 @@
 # 36-Hour Hackathon Execution Roadmap (2 Developers)
-## Project: UdyamSetu AI (SIH-26092)
+## Project: Scheme Seva Kendra (योजना सेवा केंद्र) (SIH-26092)
 
 ---
 
@@ -14,12 +14,18 @@
 │ • Next.js 14 mobile shell (360px) │ • Single-worker FastAPI container  │
 │ • Pathway 1 -> Pathway 2 upgrade  │ • FastEmbed ONNX embedding service │
 │   seamless state carryover        │ • RapidOCR + Image Downsampler     │
-│ • Web Speech STT hook (Hindi/EN)  │ • Targeted Extractors (4 docs)     │
-│ • Document-specific upload tabs   │ • Hybrid Regex + Positional Heurist│
-│ • Dynamic Scheme Cards (0-100%)   │ • Gemini 1.5 Flash fallback router │
-│ • Printable Common App Format(CAF)│ • Dynamic Missing Document Engine  │
-│ • Hidden Dev Panel Drawer HUD     │ • Mock DigiLocker eKYC API         │
-│ • Vercel Edge Deployment          │ • Render 512MB Dockerfile deploy   │
+│ • Official myScheme Details       │ • Targeted Extractors (4 docs)     │
+│   Portal (/schemes/[id]) with     │ • Hybrid Regex + Positional Heurist│
+│   8 tabs, ScrollSpy, 10 FAQs      │ • Gemini 1.5 Flash fallback router │
+│ • Instant Baseline Match Preview  │ • Dynamic Missing Document Engine  │
+│ • Web Speech STT hook (Hindi/EN)  │ • Mock DigiLocker eKYC API         │
+│ • Document-specific upload tabs   │ • Render 512MB Dockerfile deploy   │
+│ • Dynamic Scheme Cards (0-100%)   │                                    │
+│ • Side-by-Side Compare Drawer     │                                    │
+│ • Financial Breakdown Drawer      │                                    │
+│ • Printable Common App Format(CAF)│                                    │
+│ • Hidden Dev Panel Drawer HUD     │                                    │
+│ • Vercel Edge Deployment          │                                    │
 └───────────────────────────────────┴────────────────────────────────────┘
 ```
 
@@ -39,7 +45,8 @@
   HOURS 06:00 - 12:00 | SPRINT BLOCK 2: DUAL PATHWAYS & HYBRID MATCHER
   ════════════════════════════════════════════════════════════════════════════
   DEV 1: Build Pathway 1 (1-Tap Profession Grid + Voice Mic).
-         Implement Upgrade button that pushes into Pathway 2 with pre-filled state.
+         Add Instant Baseline Matches with contextual "Fill Custom Details"
+         and direct "→" link to official Scheme Details (/schemes/[id]).
   DEV 2: Ingest 25+ real schemes into `schemes.json` with eligibility bounds.
          Precompute FastEmbed vectors; implement hybrid SQL filter + cosine matcher.
   MILESTONE 2: `/api/v1/schemes/match` returns ranked schemes in < 150ms.
@@ -58,9 +65,12 @@
   MILESTONE 3: Uploading an unlabelled Aadhaar card populates Name and masked ID;
                memory peak stays < 280MB.
 
-  HOURS 18:00 - 24:00 | SPRINT BLOCK 4: DOCUMENT MEMORY & DEV PANEL HUD
+  HOURS 18:00 - 24:00 | SPRINT BLOCK 4: SCHEME DETAILS, COMPARISON & DEV PANEL HUD
   ════════════════════════════════════════════════════════════════════════════
   DEV 1: Build Scheme Cards with Compatibility Gauge (0-100%) and Grant visualizer.
+         Build official myScheme.gov.in Scheme Details Portal (/schemes/[id])
+         with 8 navigation tabs, ScrollSpy, 10 interactive FAQs, and share links.
+         Build Side-by-Side Scheme Comparison Drawer & Financial Breakdown Drawer.
          Build Hidden Dev HUD (`Ctrl + Shift + D` / triple tap logo).
   DEV 2: Build Dynamic Document Resolver: checks `uploaded_document_codes` and
          omits them from the scheme checklist. Build `/api/v1/dev/health`.
