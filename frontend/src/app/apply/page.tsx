@@ -45,6 +45,8 @@ export default function ApplyPage() {
     if (extracted.certificate_number) patch.casteCertificateNo = extracted.certificate_number;
     if (extracted.marks_percentage) patch.marksPercentage = extracted.marks_percentage;
     if (extracted.highest_education) patch.education = extracted.highest_education;
+    if (extracted.state) patch.state = extracted.state;
+    if (extracted.district) patch.district = extracted.district;
 
     const updated = StorageService.saveProfile(patch);
     setProfile(updated);
@@ -97,6 +99,7 @@ export default function ApplyPage() {
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name</label>
               <input
                 type="text"
+                placeholder="Auto-filled from OCR or type manually"
                 value={profile.name}
                 onChange={(e) => handleFormChange('name', e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
@@ -143,9 +146,31 @@ export default function ApplyPage() {
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Annual Family Income</label>
               <input
                 type="text"
-                value={`₹${profile.annualIncome.toLocaleString('en-IN')}`}
+                value={`₹${profile.annualIncome ? profile.annualIncome.toLocaleString('en-IN') : 0}`}
                 readOnly
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">State (राज्य)</label>
+              <input
+                type="text"
+                placeholder="e.g. Uttar Pradesh (from Aadhaar)"
+                value={profile.state}
+                onChange={(e) => handleFormChange('state', e.target.value)}
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">District (ज़िला)</label>
+              <input
+                type="text"
+                placeholder="e.g. Gorakhpur (from Aadhaar)"
+                value={profile.district}
+                onChange={(e) => handleFormChange('district', e.target.value)}
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
               />
             </div>
 
@@ -168,7 +193,7 @@ export default function ApplyPage() {
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Trade</label>
               <input
                 type="text"
-                value={`${profile.profession} (${profile.professionHi || 'कुम्हार'})`}
+                value={profile.profession ? `${profile.profession} (${profile.professionHi || ''})` : 'Traditional Artisan'}
                 readOnly
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
               />

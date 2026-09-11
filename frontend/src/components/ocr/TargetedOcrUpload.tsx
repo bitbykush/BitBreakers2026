@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Loader2,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import { OcrDocType, OcrExtractedData } from '@/types';
 import { ApiService } from '@/lib/api';
@@ -27,6 +28,9 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
   const [activeDocType, setActiveDocType] = useState<OcrDocType>('AADHAAR');
   const [isLoading, setIsLoading] = useState(false);
   const [extractedData, setExtractedData] = useState<OcrExtractedData | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+  const [permissionPromptMessage, setPermissionPromptMessage] = useState<string>('');
 
   const docTabs: { type: OcrDocType; nameEn: string; nameHi: string; icon: React.ReactNode }[] = [
     { type: 'AADHAAR', nameEn: 'Aadhaar Card', nameHi: 'आधार कार्ड', icon: <CreditCard className="w-3.5 h-3.5" /> },
@@ -36,32 +40,60 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
   ];
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
-    const file = files[0];
+    const files = Array.from(fileList);
     setIsLoading(true);
+    setShowPermissionPrompt(false);
 
     try {
-      const result = await ApiService.extractTargetedOcr(file, activeDocType);
+      // Step 1: Execute with allow_gemini_fallback=false (requires explicit consent if confidence is low)
+      const result = await ApiService.extractTargetedOcr(files, activeDocType, 'AUTO', false);
+      setExtractedData(result);
+
+      if (result.needs_permission) {
+        setPendingFiles(files);
+        setShowPermissionPrompt(true);
+        setPermissionPromptMessage(
+          result.prompt_message ||
+            (currentLang === 'hi'
+              ? `दस्तावेज़ की स्पष्टता कम (${result.confidence}%) है। क्या आप उच्च सटीकता के लिए Google Gemini Cloud AI का उपयोग करना चाहते हैं?`
+              : `Local OCR scan had low confidence (${result.confidence}%). Would you like to use Google Gemini Cloud AI for high-accuracy extraction?`)
+        );
+      } else {
+        onExtractSuccess(result);
+      }
+    } catch (err) {
+      console.error('OCR Error:', err);
+    } finally {
+      setIsLoading(false);
+      // Reset input value so same files can be re-selected if necessary
+      e.target.value = '';
+    }
+  };
+
+  const handleAcceptGemini = async () => {
+    if (pendingFiles.length === 0) return;
+    setIsLoading(true);
+    setShowPermissionPrompt(false);
+    try {
+      // Step 2: User explicitly gave permission in the prompt -> execute Gemini fallback!
+      const result = await ApiService.extractTargetedOcr(pendingFiles, activeDocType, 'AUTO', true);
       setExtractedData(result);
       onExtractSuccess(result);
     } catch (err) {
-      console.error('OCR Error:', err);
+      console.error('Gemini Fallback Error:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSimulateScan = async () => {
-    setIsLoading(true);
-    // 900ms realistic ONNX processing delay
-    setTimeout(async () => {
-      const result = await ApiService.extractTargetedOcr(new Blob(), activeDocType, 'MOCK');
-      setExtractedData(result);
-      onExtractSuccess(result);
-      setIsLoading(false);
-    }, 900);
+  const handleDeclineGemini = () => {
+    setShowPermissionPrompt(false);
+    if (extractedData) {
+      onExtractSuccess(extractedData);
+    }
   };
 
   return (
@@ -100,7 +132,10 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
             <button
               key={tab.type}
               type="button"
-              onClick={() => setActiveDocType(tab.type)}
+              onClick={() => {
+                setActiveDocType(tab.type);
+                setShowPermissionPrompt(false);
+              }}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-indigo-950 text-white shadow-xs'
@@ -114,15 +149,13 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         })}
       </div>
 
-      {/* Upload Dropzone */}
-      <div
-        onClick={handleSimulateScan}
-        className="border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-2xl p-6 text-center bg-slate-50/60 hover:bg-indigo-50/30 transition-all cursor-pointer relative"
-      >
+      {/* Upload Dropzone (Click opens native file explorer; no artificial mock prefill) */}
+      <div className="border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-2xl p-6 text-center bg-slate-50/60 hover:bg-indigo-50/30 transition-all cursor-pointer relative">
         <input
           type="file"
           accept="image/*"
-          className="absolute inset-0 opacity-0 cursor-pointer"
+          multiple={activeDocType === 'AADHAAR'}
+          className="absolute inset-0 opacity-0 cursor-pointer z-10"
           onChange={handleFileUpload}
         />
 
@@ -147,7 +180,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
             <p className="text-xs text-emerald-700">
               {currentLang === 'hi'
                 ? 'नीचे दिए गए फ़ील्ड भर दिए गए हैं। दूसरा दस्तावेज़ अपलोड करने के लिए क्लिक करें।'
-                : 'Fields pre-filled below. Click or drop to upload another document.'}
+                : 'Fields extracted below. Click or drop to upload another document.'}
             </p>
           </div>
         ) : (
@@ -157,54 +190,128 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
             </div>
             <div>
               <p className="font-bold text-slate-900 text-sm">
-                {currentLang === 'hi'
+                {activeDocType === 'AADHAAR'
+                  ? currentLang === 'hi'
+                    ? 'आधार कार्ड अपलोड करें (आगे और पीछे का फोटो, या दोनों एक साथ)'
+                    : 'Click to upload Aadhaar (Select 1 or 2 images: Front & Back)'
+                  : currentLang === 'hi'
                   ? `यहाँ क्लिक करके ${docTabs.find((d) => d.type === activeDocType)?.nameHi} की फोटो अपलोड करें`
                   : `Click to upload or snap photo of ${docTabs.find((d) => d.type === activeDocType)?.nameEn}`}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">PNG, JPG or PDF up to 10MB (Auto-downscaled to 1280px)</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {activeDocType === 'AADHAAR'
+                  ? 'Supports 2 files (Front + Back) or single combined photo • Auto-downscaled to 1280px'
+                  : 'PNG, JPG or WEBP up to 10MB • Auto-downscaled to 1280px'}
+              </p>
             </div>
           </div>
         )}
       </div>
 
+      {/* User Permission Prompt Card for Gemini Cloud AI Fallback */}
+      {showPermissionPrompt && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-md space-y-3 animate-fadeIn">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-800 flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-amber-700" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-bold text-amber-950 text-sm flex items-center gap-1.5">
+                <span>{currentLang === 'hi' ? 'क्लाउड एआई उपयोग की अनुमति' : 'Cloud AI Permission Required'}</span>
+                <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-mono">
+                  Gemini 1.5 Flash
+                </span>
+              </h4>
+              <p className="text-xs text-amber-900 leading-relaxed">
+                {permissionPromptMessage}
+              </p>
+              <p className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
+                <span>🔒</span>
+                <span>
+                  {currentLang === 'hi'
+                    ? 'गोपनीयता सुरक्षा: आपके स्पष्ट अनुमोदन (Yes) के बिना कोई भी दस्तावेज़ बाहरी सर्वर पर नहीं भेजा जाएगा।'
+                    : 'Privacy Safeguard: No document data will be sent to external cloud AI without your explicit consent.'}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2 border-t border-amber-200">
+            <button
+              type="button"
+              onClick={handleDeclineGemini}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-amber-100 text-slate-700 border border-amber-300 transition shadow-2xs active:scale-95 cursor-pointer"
+            >
+              {currentLang === 'hi' ? 'नहीं, स्थानीय डेटा रखें' : 'No, Keep Local Data'}
+            </button>
+            <button
+              type="button"
+              onClick={handleAcceptGemini}
+              className="px-4 py-1.5 rounded-xl text-xs font-bold bg-indigo-950 hover:bg-indigo-900 text-white transition shadow-sm flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-orange-300" />
+              <span>{currentLang === 'hi' ? 'हाँ, Gemini AI का उपयोग करें' : 'Yes, Use Gemini AI'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Success Extracted Information Pill */}
-      {extractedData && (
+      {extractedData && !showPermissionPrompt && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-900 animate-fadeIn">
           <div className="flex items-center gap-2.5">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <div>
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-bold">
-                {extractedData.doc_type === 'AADHAAR' && 'Aadhaar Parsed & Masked:'}
+                {extractedData.doc_type === 'AADHAAR' && 'Aadhaar Parsed:'}
                 {extractedData.doc_type === 'CASTE' && 'Caste Category Parsed:'}
                 {extractedData.doc_type === 'INCOME' && 'Annual Income Parsed:'}
                 {extractedData.doc_type === 'MARKSHEET' && 'Academic Merit Parsed:'}
               </span>
 
+              {extractedData.name && (
+                <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                  {extractedData.name}
+                </span>
+              )}
+
               {extractedData.masked_aadhaar && (
-                <span className="font-mono font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950 ml-1">
+                <span className="font-mono font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
                   {extractedData.masked_aadhaar}
                 </span>
               )}
 
+              {extractedData.district && (
+                <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                  Dist: {extractedData.district}
+                </span>
+              )}
+
+              {extractedData.state && (
+                <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                  State: {extractedData.state}
+                </span>
+              )}
+
               {extractedData.category && (
-                <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950 ml-1">
+                <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
                   {extractedData.category}
                 </span>
               )}
 
               {extractedData.annual_income && (
-                <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950 ml-1">
+                <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
                   ₹{extractedData.annual_income.toLocaleString('en-IN')} / year
                 </span>
               )}
 
               {extractedData.marks_percentage && (
-                <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950 ml-1">
+                <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
                   {extractedData.marks_percentage}% Marks ({extractedData.highest_education})
                 </span>
               )}
 
-              <span className="text-emerald-700 ml-2">
+              <span className="text-emerald-700 ml-1">
                 | Confidence: {extractedData.confidence}% | Engine: {extractedData.engine}
               </span>
             </div>
@@ -218,3 +325,4 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     </div>
   );
 };
+

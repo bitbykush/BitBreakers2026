@@ -74,6 +74,10 @@ export interface OcrExtractedData {
   dob?: string;
   gender?: Gender;
   masked_aadhaar?: string;
+  pincode?: string;
+  address?: string;
+  state?: string;
+  district?: string;
   category?: SocialCategory;
   annual_income?: number;
   financial_year?: string;
@@ -82,6 +86,9 @@ export interface OcrExtractedData {
   highest_education?: EducationLevel;
   confidence: number;
   engine: 'RapidOCR_ONNX' | 'Gemini_1.5_Flash' | 'Mock';
+  needs_permission?: boolean;
+  prompt_message?: string;
+  can_use_gemini?: boolean;
 }
 
 export interface DigiLockerRecord {

@@ -39,12 +39,13 @@ export const ApiService = {
   },
 
   /**
-   * Targeted OCR Extraction endpoint.
+   * Targeted OCR Extraction endpoint. Supports single or multiple images (Front + Back).
    */
   async extractTargetedOcr(
-    file: File | Blob,
+    fileOrFiles: File | Blob | (File | Blob)[],
     docType: OcrDocType,
-    forceEngine: 'AUTO' | 'RAPIDOCR' | 'GEMINI' | 'MOCK' = 'AUTO'
+    forceEngine: 'AUTO' | 'RAPIDOCR' | 'GEMINI' | 'MOCK' = 'AUTO',
+    allowGeminiFallback: boolean = false
   ): Promise<OcrExtractedData> {
     if (forceEngine === 'MOCK') {
       return this.fallbackMockOcr(docType);
@@ -52,9 +53,18 @@ export const ApiService = {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      if (Array.isArray(fileOrFiles)) {
+        fileOrFiles.forEach((f) => formData.append('files', f));
+        if (fileOrFiles.length > 0) {
+          formData.append('file', fileOrFiles[0]);
+        }
+      } else {
+        formData.append('files', fileOrFiles);
+        formData.append('file', fileOrFiles);
+      }
       formData.append('doc_type', docType);
       formData.append('force_engine', forceEngine);
+      formData.append('allow_gemini_fallback', String(allowGeminiFallback));
 
       const response = await fetch(`${API_BASE_URL}/api/v1/ocr/extract-targeted`, {
         method: 'POST',
