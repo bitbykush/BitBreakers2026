@@ -1,0 +1,92 @@
+{
+  "SC": {
+    "category": "SC",
+    "name_en": "Scheduled Caste",
+    "name_hi": "अनुसूचित जाति",
+    "descriptors": [
+      "scheduled caste",
+      "anusuchit jati",
+      "constitution scheduled castes order 1950",
+      "chamar",
+      "jatav",
+      "dalit",
+      "valmiki",
+      "koli",
+      "mahar",
+      "pasi",
+      "dhobi",
+      "sc category"
+    ],
+    "gazette_keywords": "The Constitution (Scheduled Castes) Order 1950 as amended by the Scheduled Castes and Scheduled Tribes Lists (Modification) Order 1956"
+  },
+  "ST": {
+    "category": "ST",
+    "name_en": "Scheduled Tribe",
+    "name_hi": "अनुसूचित जनजाति",
+    "descriptors": [
+      "scheduled tribe",
+      "anusuchit janjati",
+      "constitution scheduled tribes order 1950",
+      "adivasi",
+      "gond",
+      "santhal",
+      "bhil",
+      "meena",
+      "munda",
+      "oraon",
+      "bodo",
+      "st category"
+    ],
+    "gazette_keywords": "The Constitution (Scheduled Tribes) Order 1950 as amended by the Scheduled Castes and Scheduled Tribes Orders (Amendment) Act 1976"
+  },
+  "OBC": {
+    "category": "OBC",
+    "name_en": "Other Backward Class",
+    "name_hi": "अन्य पिछड़ा वर्ग",
+    "descriptors": [
+      "other backward class",
+      "anya pichda varg",
+      "non creamy layer",
+      "ncl certificate",
+      "central list of obc",
+      "state list of backward classes",
+      "yadav",
+      "kurmi",
+      "kushwaha",
+      "telia",
+      "maurya",
+      "kumhar",
+      "lohar",
+      "barhai",
+      "obc category"
+    ],
+    "gazette_keywords": "Resolution No. 12011/68/93-BCC(C) dated 10th September 1993 published in the Gazette of India Extraordinary Part I Section I"
+  },
+  "EWS": {
+    "category": "EWS",
+    "name_en": "Economically Weaker Section",
+    "name_hi": "आर्थिक रूप से कमजोर वर्ग",
+    "descriptors": [
+      "economically weaker section",
+      "aarthik roop se kamzor varg",
+      "ews certificate",
+      "income and asset certificate",
+      "general ews",
+      "annual family income below 8 lakh",
+      "103rd constitutional amendment"
+    ],
+    "gazette_keywords": "Government of India Ministry of Personnel Public Grievances & Pensions DOPT OM No 36039/1/2019-Estt (Res) dated 31.01.2019"
+  },
+  "GENERAL": {
+    "category": "General",
+    "name_en": "General Category",
+    "name_hi": "सामान्य वर्ग",
+    "descriptors": [
+      "general",
+      "unreserved",
+      "ur category",
+      "open category"
+    ],
+    "gazette_keywords": "Unreserved merit category"
+  }
+}
