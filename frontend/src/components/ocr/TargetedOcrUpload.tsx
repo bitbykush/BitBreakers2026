@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { OcrDocType, OcrExtractedData } from '@/types';
 import { ApiService } from '@/lib/api';
+import { useAccessibility } from '@/context/AccessibilityContext';
 
 interface TargetedOcrUploadProps {
   currentLang: 'en' | 'hi';
@@ -25,6 +26,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
   currentLang,
   onExtractSuccess,
 }) => {
+  const { speakText, talkBackActive } = useAccessibility();
   const [activeDocType, setActiveDocType] = useState<OcrDocType>('AADHAAR');
   const [isLoading, setIsLoading] = useState(false);
   const [extractedData, setExtractedData] = useState<OcrExtractedData | null>(null);
@@ -47,6 +49,14 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     setIsLoading(true);
     setShowPermissionPrompt(false);
 
+    if (talkBackActive) {
+      speakText(
+        currentLang === 'hi'
+          ? 'दस्तावेज़ स्कैन हो रहा है, कृपया प्रतीक्षा करें।'
+          : 'Scanning document locally with RapidOCR, please wait.'
+      );
+    }
+
     try {
       // Step 1: Execute with allow_gemini_fallback=false (requires explicit consent if confidence is low)
       const result = await ApiService.extractTargetedOcr(files, activeDocType, 'AUTO', false);
@@ -55,17 +65,34 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       if (result.needs_permission) {
         setPendingFiles(files);
         setShowPermissionPrompt(true);
-        setPermissionPromptMessage(
+        const promptMsg =
           result.prompt_message ||
-            (currentLang === 'hi'
-              ? `दस्तावेज़ की स्पष्टता कम (${result.confidence}%) है। क्या आप उच्च सटीकता के लिए Google Gemini Cloud AI का उपयोग करना चाहते हैं?`
-              : `Local OCR scan had low confidence (${result.confidence}%). Would you like to use Google Gemini Cloud AI for high-accuracy extraction?`)
-        );
+          (currentLang === 'hi'
+            ? `दस्तावेज़ की स्पष्टता कम (${result.confidence}%) है। क्या आप उच्च सटीकता के लिए Google Gemini Cloud AI का उपयोग करना चाहते हैं?`
+            : `Local OCR scan had low confidence (${result.confidence}%). Would you like to use Google Gemini Cloud AI for high-accuracy extraction?`);
+        setPermissionPromptMessage(promptMsg);
+        if (talkBackActive) {
+          speakText(promptMsg, true);
+        }
       } else {
         onExtractSuccess(result);
+        if (talkBackActive) {
+          speakText(
+            currentLang === 'hi'
+              ? `दस्तावेज़ सफलतापूर्वक स्कैन हुआ। ${result.name ? 'नाम: ' + result.name : ''}`
+              : `Document scanned successfully. ${result.name ? 'Name: ' + result.name : ''}`
+          );
+        }
       }
     } catch (err) {
       console.error('OCR Error:', err);
+      if (talkBackActive) {
+        speakText(
+          currentLang === 'hi'
+            ? 'दस्तावेज़ स्कैन करने में त्रुटि हुई।'
+            : 'Error occurred while scanning document.'
+        );
+      }
     } finally {
       setIsLoading(false);
       // Reset input value so same files can be re-selected if necessary
@@ -77,13 +104,36 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     if (pendingFiles.length === 0) return;
     setIsLoading(true);
     setShowPermissionPrompt(false);
+
+    if (talkBackActive) {
+      speakText(
+        currentLang === 'hi'
+          ? 'Google Gemini Cloud AI द्वारा उच्च सटीकता स्कैन किया जा रहा है।'
+          : 'Scanning with Google Gemini Cloud AI for high-accuracy extraction.'
+      );
+    }
+
     try {
       // Step 2: User explicitly gave permission in the prompt -> execute Gemini fallback!
       const result = await ApiService.extractTargetedOcr(pendingFiles, activeDocType, 'AUTO', true);
       setExtractedData(result);
       onExtractSuccess(result);
+      if (talkBackActive) {
+        speakText(
+          currentLang === 'hi'
+            ? `Gemini AI स्कैन पूरा हुआ। ${result.name ? 'नाम: ' + result.name : ''}`
+            : `Gemini AI extraction complete. ${result.name ? 'Name: ' + result.name : ''}`
+        );
+      }
     } catch (err) {
       console.error('Gemini Fallback Error:', err);
+      if (talkBackActive) {
+        speakText(
+          currentLang === 'hi'
+            ? 'Gemini क्लाउड स्कैन में त्रुटि हुई।'
+            : 'Error occurred during Gemini Cloud AI extraction.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +141,13 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
   const handleDeclineGemini = () => {
     setShowPermissionPrompt(false);
+    if (talkBackActive) {
+      speakText(
+        currentLang === 'hi'
+          ? 'स्थानीय स्कैन डेटा का उपयोग किया जा रहा है।'
+          : 'Keeping local scan data without Cloud AI.'
+      );
+    }
     if (extractedData) {
       onExtractSuccess(extractedData);
     }
@@ -125,25 +182,32 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       </div>
 
       {/* Scoped Document Tabs */}
-      <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100" role="tablist" aria-label="Document Type Selection">
         {docTabs.map((tab) => {
           const isActive = activeDocType === tab.type;
+          const label = currentLang === 'hi' ? tab.nameHi : tab.nameEn;
           return (
             <button
               key={tab.type}
               type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-label={label}
               onClick={() => {
                 setActiveDocType(tab.type);
                 setShowPermissionPrompt(false);
+                if (talkBackActive) {
+                  speakText(currentLang === 'hi' ? `${tab.nameHi} चुना गया` : `${tab.nameEn} selected`);
+                }
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 isActive
                   ? 'bg-indigo-950 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               {tab.icon}
-              <span>{currentLang === 'hi' ? tab.nameHi : tab.nameEn}</span>
+              <span>{label}</span>
             </button>
           );
         })}
@@ -210,7 +274,11 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
       {/* User Permission Prompt Card for Gemini Cloud AI Fallback */}
       {showPermissionPrompt && (
-        <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-md space-y-3 animate-fadeIn">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-md space-y-3 animate-fadeIn"
+        >
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-amber-100 text-amber-800 flex-shrink-0">
               <AlertCircle className="w-5 h-5 text-amber-700" />
@@ -258,7 +326,11 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
       {/* Success Extracted Information Pill */}
       {extractedData && !showPermissionPrompt && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-900 animate-fadeIn">
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-900 animate-fadeIn"
+        >
           <div className="flex items-center gap-2.5">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <div className="flex flex-wrap items-center gap-1.5">
