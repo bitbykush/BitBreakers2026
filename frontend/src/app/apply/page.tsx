@@ -75,9 +75,10 @@ export default function ApplyPage() {
           <button
             type="button"
             onClick={() => router.push('/')}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-950 transition"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer active:scale-95"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to 1-Tap Discovery
+            <ArrowLeft className="w-3.5 h-3.5 text-orange-500" />
+            <span>Back to 1-Tap Discovery</span>
           </button>
           <span className="text-xs font-bold text-indigo-900 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
             Pathway 2: Assisted Mode
@@ -108,15 +109,15 @@ export default function ApplyPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {(['Male', 'Female', 'Other'] as const).map((g) => (
                   <button
                     key={g}
                     type="button"
                     onClick={() => handleFormChange('gender', g)}
-                    className={`h-11 rounded-xl text-xs font-bold transition ${
+                    className={`h-9 sm:h-10 rounded-lg text-xs font-semibold transition cursor-pointer ${
                       profile.gender === g
-                        ? 'border-2 border-indigo-600 bg-indigo-50 text-indigo-950'
+                        ? 'border border-indigo-600 bg-indigo-50 text-indigo-950 font-bold shadow-2xs'
                         : 'border border-slate-300 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
@@ -218,11 +219,11 @@ export default function ApplyPage() {
           <button
             type="button"
             onClick={handleSubmit}
-            className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base shadow-lg shadow-emerald-600/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+            className="w-full h-11 sm:h-12 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Sparkles className="w-5 h-5" />
-            <span>Calculate 100% Eligible Schemes</span>
-            <ArrowRight className="w-5 h-5" />
+            <Sparkles className="w-4 h-4 text-emerald-200" />
+            <span>{currentLang === 'hi' ? 'योजनाएं देखें' : 'Show Schemes'}</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </main>

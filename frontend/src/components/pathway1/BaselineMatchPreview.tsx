@@ -86,7 +86,7 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
                 <button
                   type="button"
                   onClick={() => onFillCustomDetails(scheme.id)}
-                  className="text-xs font-bold text-white bg-indigo-950 hover:bg-indigo-900 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                  className="h-8 px-3 rounded-lg text-xs font-semibold text-white bg-indigo-950 hover:bg-indigo-900 transition flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
                 >
                   <PenSquare className="w-3.5 h-3.5 text-orange-300" />
                   <span>{currentLang === 'hi' ? 'कस्टम विवरण भरें' : 'Fill Custom Details'}</span>
@@ -96,9 +96,9 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
                 <Link
                   href={`/schemes/${scheme.id}`}
                   title={currentLang === 'hi' ? 'योजना का पूरा विवरण एवं पात्रता देखें' : 'View Scheme Details & Eligibility'}
-                  className="p-1.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-800 border border-orange-300 transition flex items-center justify-center group active:scale-95"
+                  className="w-8 h-8 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 transition flex items-center justify-center group active:scale-95"
                 >
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
             </div>

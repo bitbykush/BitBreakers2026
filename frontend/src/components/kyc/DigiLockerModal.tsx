@@ -96,8 +96,11 @@ export const DigiLockerModal: React.FC<DigiLockerModalProps> = ({
             </div>
           </div>
 
-          <button onClick={handleResetAndClose} className="text-blue-200 hover:text-white p-1 rounded-lg">
-            <X className="w-5 h-5" />
+          <button
+            onClick={handleResetAndClose}
+            className="w-8 h-8 rounded-lg bg-blue-800/80 hover:bg-blue-700 text-blue-100 flex items-center justify-center transition"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -135,10 +138,10 @@ export const DigiLockerModal: React.FC<DigiLockerModalProps> = ({
               type="button"
               onClick={handleSendOtp}
               disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 active:scale-95"
+              className="w-full h-11 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 active:scale-95"
             >
               <span>{currentLang === 'hi' ? 'ओटीपी (OTP) भेजें' : 'Send OTP to Linked Mobile'}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
@@ -177,7 +180,7 @@ export const DigiLockerModal: React.FC<DigiLockerModalProps> = ({
               type="button"
               onClick={handleVerifyOtp}
               disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 active:scale-95"
+              className="w-full h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 active:scale-95"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>
@@ -219,7 +222,7 @@ export const DigiLockerModal: React.FC<DigiLockerModalProps> = ({
             <button
               type="button"
               onClick={handleResetAndClose}
-              className="w-full py-2.5 rounded-xl bg-indigo-950 text-white font-bold text-xs shadow hover:bg-indigo-900 transition"
+              className="w-full h-10 px-4 rounded-xl bg-indigo-950 text-white font-bold text-xs shadow-xs hover:bg-indigo-900 transition"
             >
               {currentLang === 'hi' ? 'पूर्ण एवं योजनाओं पर वापस जाएं' : 'Done & Return to Schemes'}
             </button>

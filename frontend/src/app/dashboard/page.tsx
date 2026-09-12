@@ -81,9 +81,9 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setIsCafModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-indigo-950 text-white text-xs font-bold hover:bg-indigo-900 transition flex items-center gap-2 shadow"
+            className="h-9 px-3.5 rounded-xl bg-indigo-950 text-white text-xs font-semibold hover:bg-indigo-900 transition flex items-center gap-2 shadow-xs"
           >
-            <FileText className="w-4 h-4 text-orange-400" />
+            <FileText className="w-3.5 h-3.5 text-orange-400" />
             <span>Generate Common Application Format (CAF)</span>
           </button>
         </div>
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIsCompareOpen(true)}
-                      className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-sm"
+                      className="h-8 px-3 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
                       <span>Compare</span>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
                         setSelectedSchemeForAnalysis(scheme);
                         setIsFinancialAnalysisOpen(true);
                       }}
-                      className="px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5"
+                      className="h-8 px-3 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5"
                     >
                       <Banknote className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Financial Breakdown</span>
@@ -178,9 +178,9 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsCafModalOpen(true)}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto h-9 px-4 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-2"
                   >
-                    <FileText className="w-4 h-4 text-orange-400" />
+                    <FileText className="w-3.5 h-3.5 text-orange-400" />
                     <span>Generate Bank Application (CAF)</span>
                   </button>
                 </div>

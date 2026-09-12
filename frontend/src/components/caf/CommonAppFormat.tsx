@@ -52,14 +52,17 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition flex items-center gap-1.5 active:scale-95"
+              className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 active:scale-95"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-3.5 h-3.5" />
               <span>🖨️ Print / Save as PDF</span>
             </button>
 
-            <button onClick={onClose} className="text-indigo-200 hover:text-white p-1 rounded-lg">
-              <X className="w-5 h-5" />
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-indigo-900/80 hover:bg-indigo-800 text-indigo-200 hover:text-white flex items-center justify-center transition"
+            >
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
