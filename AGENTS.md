@@ -52,7 +52,7 @@ scheme-seva-kendra/
 │   │   ├── api/v1/
 │   │   │   ├── routes_schemes.py       # Scheme query, match & comparative analytics endpoints
 │   │   │   ├── routes_ocr.py           # Targeted document extraction endpoint
-│   │   │   ├── routes_kyc.py           # DigiLocker mock eKYC endpoint
+│   │   │   ├── routes_kyc.py           # Citizen profile validation endpoint
 │   │   │   └── routes_dev.py           # Hidden Dev HUD health & toggle API
 │   │   └── data/
 │   │       ├── schemes.json            # 25+ real Indian welfare schemes
@@ -89,8 +89,6 @@ scheme-seva-kendra/
     │   │   │   └── FinancialAnalysisDrawer.tsx # Deep subsidy & promoter margin breakdown
     │   │   ├── dev/
     │   │   │   └── DevDebugDrawer.tsx  # Hidden Developer Panel HUD
-    │   │   ├── kyc/
-    │   │   │   └── DigiLockerModal.tsx # Sandbox OTP eKYC verification
     │   │   ├── ocr/
     │   │   │   └── TargetedOcrUpload.tsx # Scoped document dropzone & auto-fill
     │   │   ├── pathway1/

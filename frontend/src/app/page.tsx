@@ -16,6 +16,9 @@ import {
   ChevronRight,
   Sparkles,
   UserCheck,
+  UploadCloud,
+  Paperclip,
+  X,
 } from 'lucide-react';
 
 import { Header } from '@/components/common/Header';
@@ -35,6 +38,7 @@ import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
 import { calculateAge, formatDobForInput } from '@/lib/dateUtils';
 import { MOCK_SCHEMES } from '@/lib/mockData';
+import { DOC_NAMES } from '@/lib/schemeEvaluator';
 import {
   ApplicantProfile,
   SchemeMatch,
@@ -119,6 +123,7 @@ export default function Home() {
     setProfile(updated);
 
     const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+    setVerifiedDocCodes(verifiedDocs);
     ApiService.matchSchemes(updated, verifiedDocs).then(setSchemes);
   };
 
@@ -137,6 +142,7 @@ export default function Home() {
 
     if (trimmed.length > 1) {
       const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+      setVerifiedDocCodes(verifiedDocs);
       ApiService.matchSchemes(updated, verifiedDocs).then(setSchemes);
     } else {
       setSchemes([]);
@@ -206,6 +212,7 @@ export default function Home() {
     }
 
     const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+    setVerifiedDocCodes(verifiedDocs);
     ApiService.matchSchemes(updated, verifiedDocs).then(setSchemes);
   };
 
@@ -224,12 +231,43 @@ export default function Home() {
   // Calculate Eligibility & Show Stage 3 Dashboard
   const handleCalculateAndShowResults = async () => {
     const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+    setVerifiedDocCodes(verifiedDocs);
     const results = await ApiService.matchSchemes(profile, verifiedDocs);
     setSchemes(results);
     setPathwayMode('dashboard');
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const [uploadFlashMessage, setUploadFlashMessage] = useState<string | null>(null);
+
+  // Direct Scheme Document File Upload Handler
+  const handleDocumentFileUpload = (docCode: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const fileSize = `${(file.size / 1024).toFixed(1)} KB`;
+      const refId = `DOC-${docCode.replace(/^DOC_/, '')}-${Date.now().toString().slice(-4)}`;
+
+      StorageService.saveUploadedDocument(docCode, dataUrl, file.name, fileSize, refId, 'MANUAL');
+      StorageService.verifyDocument(docCode, 'MANUAL', refId);
+
+      const docs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+      const newCodes = Array.from(new Set([...docs, docCode]));
+      setVerifiedDocCodes(newCodes);
+
+      ApiService.matchSchemes(profile, newCodes).then(setSchemes);
+
+      const docName = DOC_NAMES[docCode]?.en || docCode;
+      setUploadFlashMessage(
+        currentLang === 'hi'
+          ? `${DOC_NAMES[docCode]?.hi || docName} सफलतापूर्वक अपलोड एवं संलग्न कर दिया गया!`
+          : `${docName} successfully uploaded & attached!`
+      );
+      setTimeout(() => setUploadFlashMessage(null), 3500);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleOpenFinancialAnalysis = (schemeId: string) => {
@@ -243,6 +281,7 @@ export default function Home() {
     setProfile(DEFAULT_PROFILE);
     setHasSearchedOrSelectedTrade(false);
     const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+    setVerifiedDocCodes(verifiedDocs);
     ApiService.matchSchemes(DEFAULT_PROFILE, verifiedDocs).then(setSchemes);
     setPathwayMode('pathway1');
   };
@@ -662,6 +701,22 @@ export default function Home() {
               </div>
             </div>
 
+            {uploadFlashMessage && (
+              <div className="p-3.5 mb-5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 flex items-center justify-between text-xs font-semibold shadow-xs animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>{uploadFlashMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUploadFlashMessage(null)}
+                  className="p-1 text-emerald-700 hover:text-emerald-900 rounded-lg hover:bg-emerald-100 transition cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Ranked Scheme Cards */}
             <div className="space-y-5">
               {schemes.map((scheme, idx) => (
@@ -751,86 +806,176 @@ export default function Home() {
 
                   {/* Document Readiness Checklist */}
                   <div className="mt-4 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-3xl">
-                    <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      {currentLang === 'hi' ? 'सत्यापित संलग्न दस्तावेज:' : 'Attached Verified Documents:'}
-                    </h5>
-                    <div className="grid sm:grid-cols-3 gap-3">
-                      {(scheme.requiredDocuments && scheme.requiredDocuments.length > 0
+                    {(() => {
+                      const reqDocs = scheme.requiredDocuments && scheme.requiredDocuments.length > 0
                         ? scheme.requiredDocuments
-                        : ['Aadhaar Card', 'Caste Certificate', 'Income Certificate']
-                      ).map((doc: string, docIdx: number) => {
-                        const isDocVerified =
-                          verifiedDocCodes.includes(doc) ||
-                          (doc.toLowerCase().includes('aadhaar') && verifiedDocCodes.some((c) => c.toLowerCase().includes('aadhaar'))) ||
-                          (doc.toLowerCase().includes('caste') && verifiedDocCodes.some((c) => c.toLowerCase().includes('caste'))) ||
-                          (doc.toLowerCase().includes('income') && verifiedDocCodes.some((c) => c.toLowerCase().includes('income'))) ||
-                          (doc.toLowerCase().includes('bank') && verifiedDocCodes.some((c) => c.toLowerCase().includes('bank'))) ||
-                          (doc.toLowerCase().includes('residence') && verifiedDocCodes.some((c) => c.toLowerCase().includes('residence') || c.toLowerCase().includes('rural'))) ||
-                          (doc.toLowerCase().includes('report') && verifiedDocCodes.some((c) => c.toLowerCase().includes('report') || c.toLowerCase().includes('project'))) ||
-                          (doc.toLowerCase().includes('marksheet') && verifiedDocCodes.some((c) => c.toLowerCase().includes('marksheet') || c.toLowerCase().includes('education')));
+                        : ['Aadhaar Card', 'Caste Certificate', 'Income Certificate'];
 
-                        return (
-                          <div
-                            key={docIdx}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold shadow-2xs transition ${
-                              isDocVerified
-                                ? 'bg-white border-emerald-200 text-emerald-900'
-                                : 'bg-amber-50/70 border-amber-200 text-amber-900'
-                            }`}
-                          >
-                            <CheckCircle2
-                              className={`w-4 h-4 flex-shrink-0 ${
-                                isDocVerified ? 'text-emerald-600' : 'text-amber-500'
-                              }`}
-                            />
-                            <span className="truncate">{doc}</span>
+                      const checkVerified = (doc: string) =>
+                        verifiedDocCodes.includes(doc) ||
+                        (doc.toLowerCase().includes('aadhaar') && verifiedDocCodes.some((c) => c.toLowerCase().includes('aadhaar'))) ||
+                        (doc.toLowerCase().includes('caste') && verifiedDocCodes.some((c) => c.toLowerCase().includes('caste'))) ||
+                        (doc.toLowerCase().includes('income') && verifiedDocCodes.some((c) => c.toLowerCase().includes('income'))) ||
+                        (doc.toLowerCase().includes('bank') && verifiedDocCodes.some((c) => c.toLowerCase().includes('bank'))) ||
+                        (doc.toLowerCase().includes('residence') && verifiedDocCodes.some((c) => c.toLowerCase().includes('residence') || c.toLowerCase().includes('rural'))) ||
+                        (doc.toLowerCase().includes('report') && verifiedDocCodes.some((c) => c.toLowerCase().includes('report') || c.toLowerCase().includes('project'))) ||
+                        (doc.toLowerCase().includes('marksheet') && verifiedDocCodes.some((c) => c.toLowerCase().includes('marksheet') || c.toLowerCase().includes('education')));
+
+                      const verifiedCount = reqDocs.filter(checkVerified).length;
+                      const pendingCount = reqDocs.length - verifiedCount;
+
+                      return (
+                        <>
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                              {currentLang === 'hi' ? 'आवश्यक संलग्न दस्तावेज (दबाकर अपलोड करें):' : 'Required Scheme Documents (Tap to Upload):'}
+                            </h5>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                {verifiedCount} {currentLang === 'hi' ? 'संलग्न' : 'Attached'}
+                              </span>
+                              {pendingCount > 0 && (
+                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 animate-pulse">
+                                  {pendingCount} {currentLang === 'hi' ? 'बाकी' : 'Pending Upload'}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
 
-                    {/* Bottom Card Actions */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-200/60">
-                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-100/70 border border-emerald-300 text-emerald-900 text-xs font-bold shadow-2xs">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-700 flex-shrink-0" />
-                        <span>{currentLang === 'hi' ? 'पात्रता स्वीकृत (Statutory Verified)' : '100% Eligible & Sanction Ready'}</span>
-                      </div>
+                          <div className="grid sm:grid-cols-3 gap-3">
+                            {reqDocs.map((doc: string, docIdx: number) => {
+                              const isDocVerified = checkVerified(doc);
+                              const bName = DOC_NAMES[doc];
+                              const docLabel = bName ? (currentLang === 'hi' ? bName.hi : bName.en) : doc;
 
-                      <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedSchemeForCompare(scheme);
-                            setIsCompareOpen(true);
-                          }}
-                          className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
-                        >
-                          <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
-                          <span>{currentLang === 'hi' ? 'योजना की तुलना करें' : 'Compare Scheme'}</span>
-                        </button>
+                              return (
+                                <label
+                                  key={docIdx}
+                                  className={`relative group flex flex-col justify-between p-3 rounded-2xl border text-xs font-semibold shadow-2xs transition cursor-pointer select-none ${
+                                    isDocVerified
+                                      ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950 hover:bg-emerald-100/90'
+                                      : 'bg-amber-50 border-amber-300 text-amber-950 ring-1 ring-amber-200 hover:bg-amber-100/80 hover:border-amber-400 hover:shadow-md'
+                                  }`}
+                                  title={
+                                    isDocVerified
+                                      ? currentLang === 'hi' ? 'दस्तावेज संलग्न है (बदलने हेतु क्लिक करें)' : 'Document attached (click to replace)'
+                                      : currentLang === 'hi' ? 'क्लिक करके दस्तावेज अपलोड करें' : 'Click to upload file'
+                                  }
+                                >
+                                  <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handleDocumentFileUpload(doc, file);
+                                      }
+                                      e.target.value = '';
+                                    }}
+                                  />
+                                  <div className="flex items-start gap-2">
+                                    {isDocVerified ? (
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                                    ) : (
+                                      <UploadCloud className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5 animate-bounce" />
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                      <span className="block truncate font-bold">{docLabel}</span>
+                                      <span className="text-[10px] text-slate-500 block truncate">{doc}</span>
+                                    </div>
+                                  </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleOpenFinancialAnalysis(scheme.id)}
-                          className="px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
-                        >
-                          <Banknote className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Financial Breakdown</span>
-                        </button>
+                                  <div className="mt-2 pt-1.5 border-t border-slate-200/50 flex items-center justify-between text-[11px]">
+                                    {isDocVerified ? (
+                                      <>
+                                        <span className="text-emerald-700 font-bold flex items-center gap-1">
+                                          <Paperclip className="w-3 h-3" />
+                                          {currentLang === 'hi' ? 'संलग्न (बदलें)' : 'Attached (Replace)'}
+                                        </span>
+                                        <span className="text-[10px] text-emerald-600">✓ Ready</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="text-amber-800 font-extrabold flex items-center gap-1 group-hover:underline">
+                                          <UploadCloud className="w-3 h-3 text-amber-600" />
+                                          {currentLang === 'hi' ? 'अपलोड करें ⬆' : 'Upload File ⬆'}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-200/60 px-1.5 py-0.5 rounded">
+                                          Action Req
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedSchemeForCaf(scheme);
-                            setIsCafModalOpen(true);
-                          }}
-                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                        >
-                          <FileText className="w-4 h-4 text-orange-400" />
-                          <span>{currentLang === 'hi' ? 'सी.ए.एफ. आवेदन पत्र (CAF) 📄' : 'Generate Scheme CAF Dossier 📄'}</span>
-                        </button>
-                      </div>
-                    </div>
+                          {/* Bottom Card Actions */}
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-200/60">
+                            <div
+                              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold shadow-2xs ${
+                                pendingCount === 0
+                                  ? 'bg-emerald-100/70 border-emerald-300 text-emerald-900'
+                                  : 'bg-amber-100/80 border-amber-300 text-amber-950'
+                              }`}
+                            >
+                              {pendingCount === 0 ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                                  <span>{currentLang === 'hi' ? 'सभी दस्तावेज संलग्न (Dossier Ready)' : 'All Documents Attached (Dossier Ready)'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UploadCloud className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                                  <span>
+                                    {currentLang === 'hi'
+                                      ? `${pendingCount} दस्तावेज संलग्न करना बाकी है`
+                                      : `${pendingCount} document(s) pending attachment`}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSchemeForCompare(scheme);
+                                  setIsCompareOpen(true);
+                                }}
+                                className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+                              >
+                                <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
+                                <span>{currentLang === 'hi' ? 'योजना की तुलना करें' : 'Compare Scheme'}</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenFinancialAnalysis(scheme.id)}
+                                className="px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                              >
+                                <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Financial Breakdown</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSchemeForCaf(scheme);
+                                  setIsCafModalOpen(true);
+                                }}
+                                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                              >
+                                <FileText className="w-4 h-4 text-orange-400" />
+                                <span>{currentLang === 'hi' ? 'सी.ए.एफ. आवेदन पत्र (CAF) 📄' : 'Generate Scheme CAF Dossier 📄'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}

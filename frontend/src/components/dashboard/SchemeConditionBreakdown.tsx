@@ -337,10 +337,10 @@ export function SchemeConditionBreakdown({
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold border border-amber-300">
                   <UploadCloud className="w-3 h-3 text-amber-700" />
-                  {currentLang === 'hi' ? 'दस्तावेज सत्यापन केंद्र' : 'Document Clearance Center'}
+                  {currentLang === 'hi' ? 'दस्तावेज संलग्न केंद्र' : 'Document Attachment Center'}
                 </div>
                 <h3 className="text-lg sm:text-xl font-black text-slate-900">
-                  {currentLang === 'hi' ? 'लंबित योजना दस्तावेज संलग्न करें' : 'Attach & Verify Pending Scheme Documents'}
+                  {currentLang === 'hi' ? 'योजना दस्तावेज संलग्न करें' : 'Attach Scheme Documents'}
                 </h3>
                 <p className="text-xs text-slate-600">
                   {scheme.nameEn || scheme.nameHi}
@@ -389,7 +389,7 @@ export function SchemeConditionBreakdown({
                           {isVerified ? (
                             <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
                               <Check className="w-3 h-3" />
-                              {currentLang === 'hi' ? 'सत्यापित' : 'Verified'}
+                              {currentLang === 'hi' ? 'संलग्न' : 'Attached'}
                             </span>
                           ) : (
                             <span className="bg-amber-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -407,7 +407,7 @@ export function SchemeConditionBreakdown({
                         {isVerified ? (
                           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs">
                             <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                            <span>{currentLang === 'hi' ? 'स्वीकृत' : 'Attached'}</span>
+                            <span>{currentLang === 'hi' ? 'संलग्न' : 'Attached'}</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -428,14 +428,14 @@ export function SchemeConditionBreakdown({
                               />
                             </label>
 
-                            {/* One-Tap Demo Verification Button */}
+                            {/* One-Tap Fast Demo Attachment Button */}
                             <button
                               type="button"
                               onClick={() => handleInstantDemoAttach(docCode)}
                               className="h-8 px-2.5 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 text-[11px] font-bold border border-amber-400 shadow-2xs transition cursor-pointer"
-                              title="Instant verification for sandbox/demo testing"
+                              title="Instant attachment for testing"
                             >
-                              ⚡ {currentLang === 'hi' ? 'त्वरित पुष्टि' : 'Quick Verify'}
+                              ⚡ {currentLang === 'hi' ? 'त्वरित संलग्न' : 'Quick Attach'}
                             </button>
                           </div>
                         )}

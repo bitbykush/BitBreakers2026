@@ -25,7 +25,7 @@ To ensure zero merge conflicts during parallel coding, file ownership is strictl
 │ • Android Accessibility Suite:    │ • Targeted Extractors (Aadhaar,    │
 │   TalkBack, High Contrast AAA,    │   Caste, Income, Marksheet)        │
 │   Magnifier, Single Header Btn    │ • Dynamic Document Engine, Docker  │
-│ • Official myScheme Details       │ • DigiLocker mock eKYC endpoint    │
+│ • Official myScheme Details       │ • Pure Document Upload Service     │
 │   Portal (/schemes/[id]) with     │                                    │
 │   8 tabs, ScrollSpy, 10 FAQs      │                                    │
 │ • Baseline Matches & Trade Pills  │                                    │
@@ -64,7 +64,7 @@ dev (Integration Branch)
   ├── feat/dev2-fastembed-setup
   ├── feat/dev2-targeted-ocr
   ├── feat/dev2-scheme-matcher
-  └── feat/dev2-digilocker-ekyc
+  └── feat/dev2-document-upload
 ```
 
 ### Branch Naming Rules

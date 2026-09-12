@@ -18,7 +18,7 @@
 │   (TalkBack, High Contrast,       │ • Hybrid Regex + Positional Heurist│
 │   Magnifier Lens, Reading Guide)  │ • Gemini 1.5 Flash fallback router │
 │ • Official myScheme Details       │ • Dynamic Missing Document Engine  │
-│   Portal (/schemes/[id]) with     │ • Mock DigiLocker eKYC API         │
+│   Portal (/schemes/[id]) with     │ • Pure Document Upload Service     │
 │   8 tabs, ScrollSpy, 10 FAQs      │ • Render 512MB Dockerfile deploy   │
 │ • Instant Baseline Match Preview  │                                    │
 │ • Web Speech STT hook (Hindi/EN)  │                                    │
@@ -92,13 +92,13 @@
                Dev HUD allows toggling RapidOCR vs Gemini vs Mock mode live;
                Accessibility Suite operational with TalkBack & High Contrast.
 
-  HOURS 24:00 - 30:00 | SPRINT BLOCK 5: COMMON APP FORMAT & DIGILOCKER E-KYC
+  HOURS 24:00 - 30:00 | SPRINT BLOCK 5: COMMON APP FORMAT & DOCUMENT DOSSIER
   ════════════════════════════════════════════════════════════════════════════
   DEV 1: Build Printable Common Application Format (CAF) with `@media print` A4.
-         Build DigiLocker OTP modal with green verification stamp.
-  DEV 2: Build mock eKYC verification endpoint `POST /api/v1/kyc/verify-otp`.
-         Embed DigiLocker certificate reference numbers into the CAF payload.
-  MILESTONE 5: User can preview and print an A4 CAF dossier with eKYC stamps.
+         Build interactive document attachment cards with yellow/green states.
+  DEV 2: Build targeted document storage & pure document upload services.
+         Embed attached document reference details into the CAF payload.
+  MILESTONE 5: User can preview and print an A4 CAF dossier with attached documents.
 
   HOURS 30:00 - 36:00 | SPRINT BLOCK 6: DEPLOYMENT, TESTING & JURY DRILLS
   ════════════════════════════════════════════════════════════════════════════
