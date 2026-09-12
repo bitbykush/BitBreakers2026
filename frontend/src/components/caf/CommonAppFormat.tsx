@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Printer, X, ShieldCheck, Check, Download, CheckCircle2, QrCode, FileText, Paperclip } from 'lucide-react';
 import { ApplicantProfile, SchemeMatch, DocumentRecord } from '@/types';
 import { StorageService } from '@/lib/storage';
+import { printDossier } from '@/lib/printHelper';
 
 interface CommonAppFormatProps {
   isOpen: boolean;
@@ -42,48 +43,79 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
 
   const dossierRefId = `CAF-GOI-2026-X${Math.abs((profile.name ? profile.name.length : 7) * 1337 + 8921)}`;
 
+  const schemeTitle = selectedScheme?.nameEn || 'Scheme';
+  const applicantTitle = profile.name || 'Applicant';
+  const docFilenameTitle = `CAF_${schemeTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${applicantTitle.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
   const handlePrint = () => {
-    window.print();
+    printDossier('print-dossier', docFilenameTitle);
   };
 
   const handleDownloadDossier = () => {
     const printElement = document.getElementById('print-dossier');
     if (!printElement) {
-      window.print();
+      handlePrint();
       return;
     }
-
-    const schemeTitle = selectedScheme?.nameEn || 'Scheme';
-    const applicantTitle = profile.name || 'Applicant';
 
     const htmlDocument = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CAF_Application_${schemeTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${applicantTitle.replace(/[^a-zA-Z0-9]/g, '_')}</title>
+  <title>${docFilenameTitle}</title>
   <style>
-    @page { size: A4; margin: 10mm; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; margin: 0; padding: 24px; background: #ffffff; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    @page { size: A4 portrait; margin: 10mm 12mm 12mm 12mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; background: #ffffff; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 14px; page-break-inside: avoid; break-inside: avoid; }
     th, td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 11px; text-align: left; vertical-align: middle; }
     .bg-slate-50 { background-color: #f8fafc; }
     .bg-slate-100 { background-color: #f1f5f9; }
     .bg-emerald-50 { background-color: #ecfdf5; }
+    .bg-emerald-100 { background-color: #d1fae5; }
     .bg-blue-50 { background-color: #eff6ff; }
     .bg-amber-50 { background-color: #fffbeb; }
     .text-emerald-700 { color: #047857; }
     .text-emerald-800 { color: #065f46; }
     .text-indigo-950 { color: #1e1b4b; }
     .text-indigo-900 { color: #312e81; }
+    .text-indigo-700 { color: #4338ca; }
     .text-orange-700 { color: #c2410c; }
+    .text-blue-700 { color: #1d4ed8; }
+    .text-amber-800 { color: #92400e; }
+    .text-slate-900 { color: #0f172a; }
+    .text-slate-800 { color: #1e293b; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-500 { color: #64748b; }
     .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-black { font-weight: 900; }
     .font-mono { font-family: monospace; }
-    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .grid { display: grid; gap: 10px; }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .border { border: 1px solid #e2e8f0; }
-    .rounded-xl { border-radius: 10px; }
+    .border-2 { border-width: 2px; }
+    .border-b-2 { border-bottom-width: 2px; }
+    .border-indigo-950 { border-color: #1e1b4b; }
+    .border-slate-200 { border-color: #e2e8f0; }
+    .border-slate-300 { border-color: #cbd5e1; }
+    .border-slate-400 { border-color: #94a3b8; }
+    .border-emerald-200 { border-color: #a7f3d0; }
+    .border-emerald-300 { border-color: #6ee7b7; }
+    .border-emerald-400 { border-color: #34d399; }
+    .rounded-lg { border-radius: 8px; }
+    .rounded-xl { border-radius: 12px; }
+    .rounded-2xl { border-radius: 16px; }
+    .rounded-3xl { border-radius: 24px; }
+    .p-2 { padding: 8px; }
     .p-3 { padding: 12px; }
+    .p-6 { padding: 24px; }
+    .px-3 { padding-left: 12px; padding-right: 12px; }
+    .py-1\\.5 { padding-top: 6px; padding-bottom: 6px; }
+    .page-break-before { break-before: page; page-break-before: always; }
     img { max-width: 100%; height: auto; display: block; }
-    @media print { .no-print { display: none; } }
+    .no-print { display: none !important; }
   </style>
 </head>
 <body>
@@ -95,16 +127,16 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
     const blobUrl = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     downloadAnchor.href = blobUrl;
-    downloadAnchor.download = `CAF_Application_${schemeTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${applicantTitle.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+    downloadAnchor.download = `${docFilenameTitle}.html`;
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     document.body.removeChild(downloadAnchor);
     URL.revokeObjectURL(blobUrl);
 
-    // Also invoke print/PDF save dialog
+    // Also invoke clean isolated print/PDF preview
     setTimeout(() => {
-      window.print();
-    }, 200);
+      handlePrint();
+    }, 250);
   };
 
   const findDoc = (type: string) =>
@@ -198,8 +230,8 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
               <p className="text-slate-500 text-[11px]">
                 Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
               </p>
-              <span className="inline-block mt-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-300">
-                ✓ Statutory Verification Passed
+              <span className="inline-block mt-1 bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-200">
+                📋 OCR Processed
               </span>
             </div>
           </div>
@@ -223,19 +255,19 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                   <td className="p-2 font-bold bg-slate-50">Social Category:</td>
                   <td className="p-2 font-semibold text-emerald-800">{profile.category} (Affirmative Action Bonus)</td>
                   <td className="p-2 font-bold bg-slate-50">Gender / DOB:</td>
-                  <td className="p-2">{profile.gender} / {profile.dob || '26/02/2000'}</td>
+                  <td className="p-2">{profile.gender || 'N/A'} / {profile.dob || 'N/A'}{profile.age ? ` (Age: ${profile.age} yrs)` : ''}</td>
                 </tr>
                 <tr className="border-b border-slate-200">
                   <td className="p-2 font-bold bg-slate-50">Certified Annual Income:</td>
-                  <td className="p-2 font-semibold">₹{(profile.annualIncome || 120000).toLocaleString('en-IN')} / year (Revenue Verified)</td>
+                  <td className="p-2 font-semibold">{profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year (Revenue Verified)` : '₹1,20,000 / year (Revenue Verified)'}</td>
                   <td className="p-2 font-bold bg-slate-50">Location Classification:</td>
-                  <td className="p-2 font-semibold text-orange-700">{profile.areaType} Gram Panchayat ({profile.district || 'Gorakhpur'}, {profile.state || 'Uttar Pradesh'})</td>
+                  <td className="p-2 font-semibold text-orange-700">{profile.areaType || 'Rural'} Gram Panchayat ({profile.district || 'Gorakhpur'}, {profile.state || 'Uttar Pradesh'})</td>
                 </tr>
                 <tr>
                   <td className="p-2 font-bold bg-slate-50">Education & Course:</td>
-                  <td className="p-2 font-semibold">{profile.education} Pass</td>
-                  <td className="p-2 font-bold bg-slate-50">Verification Status:</td>
-                  <td className="p-2 text-emerald-700 font-mono font-bold">✓ Targeted OCR & State Revenue Verified</td>
+                  <td className="p-2 font-semibold">{profile.education || '10th'} Pass</td>
+                  <td className="p-2 font-bold bg-slate-50">Document Status:</td>
+                  <td className="p-2 text-indigo-700 font-mono font-bold">📋 OCR Data Collected</td>
                 </tr>
               </tbody>
             </table>
@@ -322,12 +354,11 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
             </div>
           </div>
 
-          {/* Section 4: Attached Verified Documents & Certificates ( संलग्‍न प्रमाणित दस्तावेज ) */}
           <div className="space-y-3 pt-2">
             <h3 className="text-xs font-bold uppercase tracking-wider bg-slate-100 px-3 py-1.5 text-slate-800 border-l-4 border-indigo-950 flex items-center justify-between">
-              <span>4. Attached Verified Documents & Certificates (संलग्न प्रमाणित दस्तावेज)</span>
-              <span className="text-[10px] text-emerald-700 font-mono font-bold">
-                {attachedDocs.length > 0 ? `${attachedDocs.length} Documents Attached` : '4 of 4 Verified'}
+              <span>4. Attached Documents & Scans (संलग्न दस्तावेज)</span>
+              <span className="text-[10px] text-slate-600 font-mono font-bold">
+                {attachedDocs.length > 0 ? `${attachedDocs.length} Documents Attached` : 'Pending Upload'}
               </span>
             </h3>
 
@@ -339,8 +370,8 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                     <FileText className="w-3.5 h-3.5 text-indigo-700" />
                     Aadhaar Identity Card
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                    {aadhaarDoc?.fileDataUrl ? '✓ Scan Attached' : '✓ UIDAI Verified'}
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    {aadhaarDoc?.fileDataUrl ? '📎 Scan Uploaded' : 'Pending Upload'}
                   </span>
                 </div>
 
@@ -364,8 +395,8 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                     )}
                     <p><strong className="text-slate-800">UID:</strong> {profile.maskedAadhaar || 'XXXX-XXXX-7155'}</p>
                     <p><strong className="text-slate-800">Name:</strong> {profile.name || 'Aryan Ranjeet Kalkhaire'}</p>
-                    <p className="text-[10px] text-emerald-700 font-mono">
-                      {aadhaarDoc?.referenceId ? `Ref: ${aadhaarDoc.referenceId}` : 'UIDAI Verified'}
+                    <p className="text-[10px] text-indigo-700 font-mono">
+                      {aadhaarDoc?.referenceId ? `Ref: ${aadhaarDoc.referenceId}` : 'OCR Collected'}
                     </p>
                   </div>
                 </div>
@@ -378,8 +409,8 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                     <FileText className="w-3.5 h-3.5 text-indigo-700" />
                     Caste / Community Certificate
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                    {casteDoc?.fileDataUrl ? '✓ Scan Attached' : '✓ Revenue Verified'}
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    {casteDoc?.fileDataUrl ? '📎 Scan Uploaded' : 'Pending Upload'}
                   </span>
                 </div>
 
@@ -415,8 +446,8 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                     <FileText className="w-3.5 h-3.5 text-indigo-700" />
                     Annual Income Certificate
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                    {incomeDoc?.fileDataUrl ? '✓ Scan Attached' : '✓ State Verified'}
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    {incomeDoc?.fileDataUrl ? '📎 Scan Uploaded' : 'Pending Upload'}
                   </span>
                 </div>
 
@@ -452,8 +483,8 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                     <FileText className="w-3.5 h-3.5 text-indigo-700" />
                     Educational Marksheet / Degree
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                    {marksheetDoc?.fileDataUrl ? '✓ Scan Attached' : '✓ Board Verified'}
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    {marksheetDoc?.fileDataUrl ? '📎 Scan Uploaded' : 'Pending Upload'}
                   </span>
                 </div>
 
@@ -520,7 +551,7 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                     <div className="bg-white rounded-xl border border-slate-200 p-2 flex items-center justify-center min-h-48 relative">
                       {/* Watermark overlay */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 rotate-[-20deg] text-xl font-black text-slate-900 select-none">
-                        GOVERNMENT OF INDIA • E-VERIFIED STATUTORY ATTACHMENT
+                        GOVERNMENT OF INDIA • STATUTORY DOCUMENT COPY
                       </div>
                       <img
                         src={doc.fileDataUrl}
@@ -530,8 +561,8 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1">
-                      <span>Ref: {doc.referenceId || `VER-${Date.now().toString().slice(-6)}`}</span>
-                      <span className="text-emerald-700 font-bold">✓ Direct OCR Attached</span>
+                      <span>Ref: {doc.referenceId || `DOC-${Date.now().toString().slice(-6)}`}</span>
+                      <span className="text-indigo-700 font-bold">📎 OCR Copy Attached</span>
                     </div>
                   </div>
                 ))}
@@ -546,13 +577,13 @@ export const CommonAppFormat: React.FC<CommonAppFormatProps> = ({
                 {/* Visual QR Attestation stamp */}
                 <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-[9px] font-mono text-center text-slate-700 border border-slate-200 rounded">
                   <QrCode className="w-8 h-8 text-indigo-950 mb-0.5" />
-                  <span className="text-[8px] font-bold">VERIFIED</span>
+                  <span className="text-[8px] font-bold">CAF QR</span>
                 </div>
               </div>
               <div className="text-xs text-slate-500">
                 <p className="font-bold text-slate-800">Digital Nodal Attestation</p>
-                <p className="text-[10px]">Scan QR for statutory verification log</p>
-                <p className="text-[10px] font-mono text-emerald-700">Hash: 8f92a4...d021</p>
+                <p className="text-[10px]">Scan QR for CAF application reference</p>
+                <p className="text-[10px] font-mono text-indigo-700">Hash: 8f92a4...d021</p>
               </div>
             </div>
 

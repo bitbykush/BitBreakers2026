@@ -108,14 +108,14 @@ export default function DashboardPage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300 mb-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping" />
-                Stage 3: Verified Welfare Allocations
+                Stage 3: Matched Welfare Schemes
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-indigo-950">
                 Ranked Welfare & Subsidy Compatibility Results
               </h3>
             </div>
             <p className="text-xs text-slate-600">
-              Personalized matches computed for {profile.name} ({profile.category} {profile.gender}) in {profile.district}, {profile.state}.
+              Personalized matches computed for {profile.name || 'Applicant'} ({[profile.category, profile.gender].filter(Boolean).join(' ') || 'General'}) in {profile.district || 'District'}, {profile.state || 'State'}.
             </p>
           </div>
         </div>

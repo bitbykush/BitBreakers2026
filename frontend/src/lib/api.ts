@@ -1,4 +1,10 @@
-import { ApplicantProfile, SchemeMatch, OcrExtractedData, OcrDocType, DigiLockerRecord } from '../types';
+import {
+  ApplicantProfile,
+  SchemeMatch,
+  OcrExtractedData,
+  OcrDocType,
+  DigiLockerRecord
+} from '../types';
 import { MOCK_SCHEMES } from './mockData';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -188,9 +194,93 @@ export const ApiService = {
   },
 
   /**
-   * Local deterministic fallback matcher.
+   * Local deterministic fallback matcher with trade-relevance gating.
    */
   fallbackMatchSchemes(profile: ApplicantProfile, verifiedDocCodes: string[]): SchemeMatch[] {
+    const rawQuery = (profile.profession || '').trim().toLowerCase();
+
+    // If a search query is provided, enforce strict trade relevance
+    if (rawQuery.length > 0) {
+      const STOP_WORDS = new Set([
+        'in', 'for', 'and', 'the', 'a', 'an', 'to', 'of', 'with', 'is', 'at', 'by', 'from',
+        'need', 'want', 'loan', 'grant', 'subsidy', 'scheme', 'business', 'work', 'project',
+        'काम', 'के', 'लिए', 'चाहिए', 'लोन', 'ऋण', 'योजना', 'सरकारी', 'मुझे', 'का', 'की',
+        'में', 'से', 'पर', 'है', 'हुनर', 'व्यापार', 'दुकानदार', 'दुकान'
+      ]);
+
+      const TRADE_SYNONYMS: Record<string, string[]> = {
+        potter: ['pottery', 'terracotta', 'clay', 'artisan', 'कुम्हार', 'माटी'],
+        pottery: ['potter', 'terracotta', 'clay', 'artisan', 'कुम्हार', 'माटी'],
+        कुम्हार: ['potter', 'pottery', 'terracotta', 'clay', 'artisan', 'माटी'],
+        tailor: ['tailoring', 'garment', 'handloom', 'sewing', 'boutique', 'textile', 'सिलाई', 'दर्जी'],
+        tailoring: ['tailor', 'garment', 'handloom', 'sewing', 'boutique', 'textile', 'सिलाई', 'दर्जी'],
+        sewing: ['tailor', 'tailoring', 'garment', 'handloom', 'boutique', 'textile', 'सिलाई', 'दर्जी'],
+        सिलाई: ['tailor', 'tailoring', 'sewing', 'garment', 'दर्जी'],
+        दर्जी: ['tailor', 'tailoring', 'sewing', 'सिलाई'],
+        vendor: ['thela', 'street vendor', 'cart', 'fruit stall', 'vegetable', 'stall', 'रेहड़ी', 'पटरी', 'ठेला'],
+        stall: ['vendor', 'street vendor', 'thela', 'stall', 'cart', 'रेहड़ी', 'ठेला'],
+        thela: ['vendor', 'street vendor', 'रेहड़ी', 'ठेला'],
+        ठेला: ['thela', 'vendor', 'street vendor', 'रेहड़ी'],
+        रेहड़ी: ['thela', 'vendor', 'street vendor', 'ठेला', 'पटरी'],
+        dairy: ['milk', 'cow', 'buffalo', 'cattle', 'livestock', 'animal husbandry', 'डेयरी', 'दूध', 'पशुपालन'],
+        milk: ['dairy', 'cow', 'buffalo', 'cattle', 'livestock', 'animal husbandry', 'डेयरी', 'दूध', 'पशुपालन'],
+        दूध: ['dairy', 'milk', 'cattle', 'livestock', 'डेयरी'],
+        डेयरी: ['dairy', 'milk', 'cattle', 'livestock', 'दूध', 'पशुपालन'],
+        solar: ['solar panel', 'renewable', 'energy', 'photovoltaic', 'scientist', 'research', 'सोलर', 'सौर'],
+        सोलर: ['solar', 'renewable', 'energy', 'सौर'],
+        सौर: ['solar', 'renewable', 'energy', 'सोलर'],
+        carpenter: ['carpentry', 'wood', 'furniture', 'बढ़ई', 'काष्ठकला'],
+        बढ़ई: ['carpenter', 'carpentry', 'wood', 'काष्ठकला'],
+        student: ['scholarship', 'college', 'school', 'degree', 'education', 'study', 'छात्र', 'छात्रवृत्ति', 'पढ़ाई'],
+        छात्र: ['student', 'scholarship', 'college', 'degree', 'छात्रवृत्ति', 'पढ़ाई'],
+        छात्रवृत्ति: ['scholarship', 'student', 'college', 'degree', 'छात्र', 'पढ़ाई'],
+        पढ़ाई: ['study', 'student', 'scholarship', 'education', 'छात्र'],
+      };
+
+      const rawTokens = rawQuery.match(/[\w\u0900-\u097F]+/g) || [];
+      const tokens = rawTokens.filter((t) => !STOP_WORDS.has(t) && t.length >= 2);
+      const effectiveTokens = tokens.length > 0 ? tokens : rawTokens.filter((t) => t.length >= 2);
+
+      if (effectiveTokens.length === 0) {
+        return [];
+      }
+
+      const expandedList: string[] = [...effectiveTokens];
+      for (const tok of effectiveTokens) {
+        if (TRADE_SYNONYMS[tok]) {
+          TRADE_SYNONYMS[tok].forEach((s) => expandedList.push(s));
+        }
+      }
+
+      const filtered = MOCK_SCHEMES.filter((scheme) => {
+        const corpus = `${scheme.nameEn} ${scheme.nameHi} ${scheme.descriptionEn} ${scheme.descriptionHi} ${(scheme.tags || []).join(' ')} ${scheme.categoryBadge} ${scheme.eligibilityHighlights.join(' ')}`.toLowerCase();
+        return expandedList.some((tok) => corpus.includes(tok));
+      });
+
+      // Strict rejection: zero matches for random inputs like 'asdfghjkl'
+      if (filtered.length === 0) {
+        return [];
+      }
+
+      return filtered.map((scheme) => {
+        let score = scheme.compatibilityPercentage;
+        if (profile.gender === 'Female') score = Math.min(99, score + 3);
+        if (profile.category === 'SC' || profile.category === 'ST') score = Math.min(99, score + 4);
+        if (profile.areaType === 'Rural') score = Math.min(99, score + 2);
+        if (profile.annualIncome > 250000 && scheme.code === 'PMS_OBC_SC') score = 0;
+
+        const missing = scheme.requiredDocuments.filter((docCode) => !verifiedDocCodes.includes(docCode));
+        const verified = scheme.requiredDocuments.filter((docCode) => verifiedDocCodes.includes(docCode));
+
+        return {
+          ...scheme,
+          compatibilityPercentage: Math.round(score * 10) / 10,
+          missingDocuments: missing,
+          verifiedDocuments: verified,
+        };
+      }).filter((s) => s.compatibilityPercentage > 0).sort((a, b) => b.compatibilityPercentage - a.compatibilityPercentage);
+    }
+
     return MOCK_SCHEMES.map((scheme) => {
       let score = scheme.compatibilityPercentage;
 

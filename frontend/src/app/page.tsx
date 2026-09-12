@@ -28,9 +28,12 @@ import { FinancialAnalysisDrawer } from '@/components/compare/FinancialAnalysisD
 import { CommonAppFormat } from '@/components/caf/CommonAppFormat';
 import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
 import { NationalSeal3DIntro } from '@/components/common/NationalSeal3DIntro';
+import { SchemeConditionBreakdown } from '@/components/dashboard/SchemeConditionBreakdown';
+import { UnmatchedSchemesDropdown } from '@/components/dashboard/UnmatchedSchemesDropdown';
 
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
+import { calculateAge, formatDobForInput } from '@/lib/dateUtils';
 import { MOCK_SCHEMES } from '@/lib/mockData';
 import {
   ApplicantProfile,
@@ -70,6 +73,7 @@ export default function Home() {
   const { isOpen: isDevHudOpen, setIsOpen: setIsDevHudOpen, toggle: toggleDevHud, handleTripleTap } = useDevHUD();
   const [ocrEngine, setOcrEngine] = useState<'AUTO' | 'RAPIDOCR' | 'GEMINI' | 'MOCK'>('AUTO');
   const [matcherEngine, setMatcherEngine] = useState<'FASTEMBED' | 'MOCK'>('FASTEMBED');
+  const [verifiedDocCodes, setVerifiedDocCodes] = useState<string[]>([]);
 
   // Hydrate from LocalStorage on mount
   useEffect(() => {
@@ -80,8 +84,14 @@ export default function Home() {
 
     // Initial match computation
     const docs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
+    setVerifiedDocCodes(docs);
     ApiService.matchSchemes(savedProfile, docs).then(setSchemes);
   }, []);
+
+  const handleDocumentsUpdated = (newCodes: string[]) => {
+    setVerifiedDocCodes(newCodes);
+    ApiService.matchSchemes(profile, newCodes).then(setSchemes);
+  };
 
   const handleLanguageChange = (lang: 'en' | 'hi') => {
     setCurrentLang(lang);
@@ -113,8 +123,11 @@ export default function Home() {
   };
 
   const handleSearchTrade = (query: string) => {
-    if (query && query.trim().length > 0) {
+    const trimmed = query ? query.trim() : '';
+    if (trimmed.length > 0) {
       setHasSearchedOrSelectedTrade(true);
+    } else {
+      setHasSearchedOrSelectedTrade(false);
     }
     const updated = StorageService.saveProfile({
       profession: query,
@@ -122,9 +135,11 @@ export default function Home() {
     });
     setProfile(updated);
 
-    if (query && query.trim().length > 1) {
+    if (trimmed.length > 1) {
       const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
       ApiService.matchSchemes(updated, verifiedDocs).then(setSchemes);
+    } else {
+      setSchemes([]);
     }
   };
 
@@ -146,11 +161,19 @@ export default function Home() {
     if (extracted.masked_aadhaar) patch.maskedAadhaar = extracted.masked_aadhaar;
     if (extracted.category) patch.category = extracted.category;
     if (extracted.annual_income) patch.annualIncome = extracted.annual_income;
-    if (extracted.certificate_number) patch.casteCertificateNo = extracted.certificate_number;
+    if (extracted.certificate_number) {
+      if (extracted.doc_type === 'INCOME') {
+        patch.incomeCertificateNo = extracted.certificate_number;
+      } else if (extracted.doc_type === 'CASTE') {
+        patch.casteCertificateNo = extracted.certificate_number;
+      }
+    }
     if (extracted.marks_percentage) patch.marksPercentage = extracted.marks_percentage;
     if (extracted.highest_education) patch.education = extracted.highest_education;
     if (extracted.state) patch.state = extracted.state;
     if (extracted.district) patch.district = extracted.district;
+    if (extracted.address) patch.address = extracted.address;
+    if (extracted.pincode) patch.pincode = extracted.pincode;
 
     const updated = StorageService.saveProfile(patch);
     setProfile(updated);
@@ -301,47 +324,19 @@ export default function Home() {
         {/* ========================================================================= */}
         {pathwayMode === 'pathway2' && (
           <section className="space-y-6 animate-fadeIn">
-            {/* Stepper Indicator */}
-            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
-              <div className="max-w-3xl mx-auto flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
-                    ✓
+            {/* Step 2 Header */}
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-xl bg-indigo-950 text-white text-sm font-bold flex items-center justify-center shadow-xs">
+                  2
+                </span>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md">
+                    {currentLang === 'hi' ? 'चरण 2' : 'Step 2'}
                   </span>
-                  <div className="hidden sm:block">
-                    <p className="text-[11px] text-slate-400 font-semibold uppercase">Step 1</p>
-                    <p className="text-xs font-bold text-slate-800">1. Basics (बुनियादी)</p>
-                  </div>
-                </div>
-                <div className="w-10 sm:w-16 h-0.5 bg-emerald-500" />
-                <div className="flex items-center gap-2">
-                  <span className="w-7 h-7 rounded-full bg-indigo-950 text-white text-xs font-bold flex items-center justify-center shadow-xs">
-                    2
-                  </span>
-                  <div className="hidden sm:block">
-                    <p className="text-[11px] text-indigo-600 font-semibold uppercase">Active Step</p>
-                    <p className="text-xs font-bold text-indigo-950">2. Category & Income</p>
-                  </div>
-                </div>
-                <div className="w-10 sm:w-16 h-0.5 bg-slate-200" />
-                <div className="flex items-center gap-2 opacity-60">
-                  <span className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center">
-                    3
-                  </span>
-                  <div className="hidden sm:block">
-                    <p className="text-[11px] text-slate-400 font-semibold uppercase">Step 3</p>
-                    <p className="text-xs font-bold text-slate-800">3. Education</p>
-                  </div>
-                </div>
-                <div className="w-10 sm:w-16 h-0.5 bg-slate-200" />
-                <div className="flex items-center gap-2 opacity-60">
-                  <span className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center">
-                    4
-                  </span>
-                  <div className="hidden sm:block">
-                    <p className="text-[11px] text-slate-400 font-semibold uppercase">Step 4</p>
-                    <p className="text-xs font-bold text-slate-800">4. Project Capital</p>
-                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-indigo-950 mt-0.5">
+                    {currentLang === 'hi' ? 'श्रेणी एवं आय विवरण (Category & Income)' : 'Category & Income'}
+                  </h3>
                 </div>
               </div>
             </div>
@@ -373,6 +368,26 @@ export default function Home() {
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
                     />
                   </div>
+                </div>
+
+                {/* Date of Birth with Automatic Age Calculation */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {currentLang === 'hi' ? 'जन्म तिथि (DOB)' : 'Date of Birth (जन्म तिथि)'}
+                    </label>
+                    {profile.age !== undefined && profile.age !== null && (
+                      <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                        {currentLang === 'hi' ? `आयु: ${profile.age} वर्ष` : `Age: ${profile.age} yrs`}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="date"
+                    value={formatDobForInput(profile.dob)}
+                    onChange={(e) => handleFormChange('dob', e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900 bg-white"
+                  />
                 </div>
 
                 {/* Gender Pills */}
@@ -408,9 +423,18 @@ export default function Home() {
                     onChange={(e) => handleFormChange('category', e.target.value as SocialCategory)}
                     className="w-full h-11 px-3 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-semibold text-slate-900 bg-white"
                   >
+                    <option value="" disabled>
+                      {currentLang === 'hi' ? '-- वर्ग चुनें (Select Category) --' : '-- Select Category --'}
+                    </option>
+                    <option value="OBC-NCL">
+                      {currentLang === 'hi' ? 'OBC-NCL - गैर मलाईदार परत' : 'OBC-NCL - Non-Creamy Layer'}
+                    </option>
                     <option value="OBC">OBC - Other Backward Class (अन्य पिछड़ा वर्ग)</option>
                     <option value="SC">SC - Scheduled Caste (अनुसूचित जाति)</option>
                     <option value="ST">ST - Scheduled Tribe (अनुसूचित जनजाति)</option>
+                    <option value="SCT">
+                      {currentLang === 'hi' ? 'SCT - अनुसूचित जाति / जनजाति' : 'SCT - Scheduled Caste / Tribe'}
+                    </option>
                     <option value="EWS">EWS - Economically Weaker Section (आर्थिक कमजोर)</option>
                     <option value="Minority">Minority Community (अल्पसंख्यक)</option>
                     <option value="General">General / Open Category (सामान्य)</option>
@@ -425,9 +449,13 @@ export default function Home() {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year` : '₹0'}
-                      readOnly
-                      className="w-1/2 h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
+                      value={profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year` : ''}
+                      placeholder={currentLang === 'hi' ? '₹0 (स्वतः भरा या टाइप करें)' : '₹0 (auto-filled or type)'}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, '');
+                        handleFormChange('annualIncome', raw ? Number(raw) : 0);
+                      }}
+                      className="w-1/2 h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-semibold text-slate-900 bg-white"
                     />
                     <div className="w-1/2 flex gap-1">
                       <button
@@ -498,18 +526,19 @@ export default function Home() {
                 {/* Educational Qualification */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    {currentLang === 'hi' ? 'शैक्षणिक योग्यता' : 'Highest Educational Qualification (शैक्षणिक योग्यता)'}
+                    {currentLang === 'hi' ? 'शैक्षणिक योग्यता (Qualification)' : 'Educational Qualification (शैक्षणिक योग्यता)'}
                   </label>
                   <select
-                    value={profile.education}
+                    value={profile.education || 'N/A'}
                     onChange={(e) => handleFormChange('education', e.target.value as EducationLevel)}
                     className="w-full h-11 px-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 bg-white"
                   >
-                    <option value="10th">Class 10th / Secondary School (हाईस्कूल)</option>
-                    <option value="12th">Class 12th / Intermediate (इंटरमीडिएट)</option>
-                    <option value="ITI">ITI / Polytechnic Diploma (डिप्लोमा)</option>
-                    <option value="Graduate">Graduate / Bachelor&apos;s Degree (स्नातक)</option>
-                    <option value="Literate">Literate / Traditional Skill (पारंपरिक हुनर)</option>
+                    <option value="N/A">N/A</option>
+                    <option value="10th">10th</option>
+                    <option value="12th">12th</option>
+                    <option value="Diploma">Diploma</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Post Graduate">Post Graduate</option>
                   </select>
                 </div>
 
@@ -520,7 +549,8 @@ export default function Home() {
                   </label>
                   <input
                     type="text"
-                    value={profile.profession ? `${profile.profession} (${profile.professionHi || 'कुम्हार'})` : 'Potter / Traditional Artisan'}
+                    value={profile.profession ? (profile.professionHi ? `${profile.profession} (${profile.professionHi})` : profile.profession) : ''}
+                    placeholder={currentLang === 'hi' ? 'ऊपर से व्यापार चुनें या खोजें' : 'Select trade above or search'}
                     readOnly
                     className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
                   />
@@ -592,27 +622,27 @@ export default function Home() {
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300 mb-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping" />
-                    Stage 3: Verified Scheme Allocations (अंतिम चरण: योजना आवंटन)
+                    Stage 3: Matched Scheme Allocations (अंतिम चरण: योजना आवंटन)
                   </div>
                   <h3 className="text-xl sm:text-2xl font-black text-indigo-950">
-                    Verified Welfare Allocations
+                    Matched Welfare Schemes
                   </h3>
                 </div>
                 <p className="text-xs text-slate-600">
-                  All central & state scheme allocations aggregated with 95%+ e-KYC accuracy. Ready for bank sanction.
+                  Central & state scheme matches aggregated based on your profile and OCR-collected documents. Ready for bank sanction.
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-semibold">
-                    👤 {profile.name}
+                    👤 {profile.name || (currentLang === 'hi' ? 'आवेदक' : 'Applicant')}
                   </span>
                   <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-xs font-semibold">
-                    🏷️ {profile.category} {profile.gender} ({profile.areaType} {profile.district})
+                    🏷️ {[profile.category, profile.gender, profile.areaType, profile.district].filter(Boolean).join(' ') || (currentLang === 'hi' ? 'सामान्य' : 'General')}
                   </span>
                   <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
                     💰 ₹{profile.requiredCapital.toLocaleString('en-IN')} Capital Need
                   </span>
                   <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold">
-                    🏺 {profile.profession}
+                    🏺 {profile.profession || (currentLang === 'hi' ? 'स्वरोजगार' : 'Self Employed')}
                   </span>
                 </div>
               </div>
@@ -704,114 +734,20 @@ export default function Home() {
                       <div>
                         <span className="text-xs font-bold text-slate-800">High Eligibility</span>
                         <p className="text-[10px] text-slate-500">
-                          {profile.category} {profile.gender} + {profile.areaType}
+                          {[profile.category, profile.gender, profile.areaType].filter(Boolean).join(' + ') || 'General Eligibility'}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* WHY DETAILS ARE APPROVED (पात्रता अनुमोदन विवरण) WITH GREEN TICKS */}
-                  <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-emerald-50/80 border border-emerald-300 space-y-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                        <h5 className="text-xs sm:text-sm font-black text-emerald-950 uppercase tracking-wide">
-                          {currentLang === 'hi'
-                            ? 'पात्रता अनुमोदन विवरण (Why Your Details Are Approved)'
-                            : 'Why Your Details Are Approved (Statutory Clearance)'}
-                        </h5>
-                      </div>
-                      <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                        ✓ 100% ELIGIBILITY CLEARANCE
-                      </span>
-                    </div>
-
-                    <div className="grid sm:grid-cols-2 gap-2.5 text-xs text-emerald-950">
-                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <span className="font-bold text-slate-900 block">
-                            {currentLang === 'hi' ? 'व्यवसाय पात्रता (Occupation Match):' : 'Trade Alignment:'}
-                          </span>
-                          <span className="text-slate-700 text-[11px]">
-                            {currentLang === 'hi'
-                              ? `पेशा "${profile.profession}" इस योजना के प्राथमिकता क्षेत्र में स्वीकृत है।`
-                              : `Occupation "${profile.profession}" is eligible under priority lending guidelines.`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <span className="font-bold text-slate-900 block">
-                            {currentLang === 'hi' ? 'वार्षिक आय सीमा (Income Ceiling):' : 'Income Ceiling Pass:'}
-                          </span>
-                          <span className="text-slate-700 text-[11px]">
-                            {currentLang === 'hi'
-                              ? `प्रमाणित आय ₹${profile.annualIncome.toLocaleString('en-IN')} प्राथमिकता सीमा (₹5,00,000) के भीतर है।`
-                              : `Annual income ₹${profile.annualIncome.toLocaleString('en-IN')} is within statutory scheme ceiling (< ₹5,00,000/yr).`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <span className="font-bold text-slate-900 block">
-                            {currentLang === 'hi' ? 'सामाजिक वर्ग व लिंग लाभ:' : 'Category & Gender Bonus:'}
-                          </span>
-                          <span className="text-slate-700 text-[11px]">
-                            {currentLang === 'hi'
-                              ? `${profile.category} वर्ग व ${profile.gender === 'Female' ? 'महिला' : profile.gender} हेतु अधिकतम ${scheme.financials.grantSubsidyPercentage}% सरकारी अनुदान स्वीकृत।`
-                              : `${profile.category} (${profile.gender}) qualifies for highest bracket ${scheme.financials.grantSubsidyPercentage}% Govt grant.`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <span className="font-bold text-slate-900 block">
-                            {currentLang === 'hi' ? 'संपार्श्विक-मुक्त गारंटी:' : 'Collateral-Free Credit:'}
-                          </span>
-                          <span className="text-slate-700 text-[11px]">
-                            {currentLang === 'hi'
-                              ? 'CGTMSE क्रेडिट गारंटी फंड ट्रस्ट के तहत 100% बिना किसी बंधक या जमानत के।'
-                              : '100% sovereign credit guarantee under CGTMSE trust with zero third-party collateral.'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <span className="font-bold text-slate-900 block">
-                            {currentLang === 'hi' ? 'आयु योग्यता (Age Window):' : 'Age Qualification:'}
-                          </span>
-                          <span className="text-slate-700 text-[11px]">
-                            {currentLang === 'hi'
-                              ? `जन्मतिथि ${profile.dob || '1995-05-12'} (आयु ~${new Date().getFullYear() - parseInt(profile.dob?.split('-')[0] || '1995', 10)} वर्ष) 18 से 65 वर्ष की अनिवार्य पात्रता को पूर्ण करती है।`
-                              : `DOB ${profile.dob || '1995-05-12'} (Age ~${new Date().getFullYear() - parseInt(profile.dob?.split('-')[0] || '1995', 10)} yrs) complies with statutory 18 to 65 years eligibility.`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
-                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <span className="font-bold text-slate-900 block">
-                            {currentLang === 'hi' ? 'क्षेत्रीय अधिमान्यता:' : 'Regional Classification:'}
-                          </span>
-                          <span className="text-slate-700 text-[11px]">
-                            {currentLang === 'hi'
-                              ? `${profile.areaType} क्षेत्र (${profile.district}, ${profile.state}) के तहत प्राथमिकता स्वीकृत।`
-                              : `${profile.areaType} classification (${profile.district}, ${profile.state}) approved for nodal allocation.`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* DYNAMIC FUNCTIONAL ELIGIBILITY CONDITION BREAKDOWN */}
+                  <SchemeConditionBreakdown
+                    scheme={scheme}
+                    profile={profile}
+                    verifiedDocCodes={verifiedDocCodes}
+                    currentLang={currentLang}
+                    onDocumentsUpdated={handleDocumentsUpdated}
+                  />
 
                   {/* Document Readiness Checklist */}
                   <div className="mt-4 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-3xl">
@@ -819,20 +755,38 @@ export default function Home() {
                       {currentLang === 'hi' ? 'सत्यापित संलग्न दस्तावेज:' : 'Attached Verified Documents:'}
                     </h5>
                     <div className="grid sm:grid-cols-3 gap-3">
-                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold shadow-2xs">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span className="truncate">Aadhaar (OCR Masked)</span>
-                      </div>
+                      {(scheme.requiredDocuments && scheme.requiredDocuments.length > 0
+                        ? scheme.requiredDocuments
+                        : ['Aadhaar Card', 'Caste Certificate', 'Income Certificate']
+                      ).map((doc: string, docIdx: number) => {
+                        const isDocVerified =
+                          verifiedDocCodes.includes(doc) ||
+                          (doc.toLowerCase().includes('aadhaar') && verifiedDocCodes.some((c) => c.toLowerCase().includes('aadhaar'))) ||
+                          (doc.toLowerCase().includes('caste') && verifiedDocCodes.some((c) => c.toLowerCase().includes('caste'))) ||
+                          (doc.toLowerCase().includes('income') && verifiedDocCodes.some((c) => c.toLowerCase().includes('income'))) ||
+                          (doc.toLowerCase().includes('bank') && verifiedDocCodes.some((c) => c.toLowerCase().includes('bank'))) ||
+                          (doc.toLowerCase().includes('residence') && verifiedDocCodes.some((c) => c.toLowerCase().includes('residence') || c.toLowerCase().includes('rural'))) ||
+                          (doc.toLowerCase().includes('report') && verifiedDocCodes.some((c) => c.toLowerCase().includes('report') || c.toLowerCase().includes('project'))) ||
+                          (doc.toLowerCase().includes('marksheet') && verifiedDocCodes.some((c) => c.toLowerCase().includes('marksheet') || c.toLowerCase().includes('education')));
 
-                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold shadow-2xs">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span className="truncate">Caste Cert (OCR Verified)</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold shadow-2xs">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span className="truncate">Income & Marksheet (Verified)</span>
-                      </div>
+                        return (
+                          <div
+                            key={docIdx}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold shadow-2xs transition ${
+                              isDocVerified
+                                ? 'bg-white border-emerald-200 text-emerald-900'
+                                : 'bg-amber-50/70 border-amber-200 text-amber-900'
+                            }`}
+                          >
+                            <CheckCircle2
+                              className={`w-4 h-4 flex-shrink-0 ${
+                                isDocVerified ? 'text-emerald-600' : 'text-amber-500'
+                              }`}
+                            />
+                            <span className="truncate">{doc}</span>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Bottom Card Actions */}
@@ -881,6 +835,14 @@ export default function Home() {
                 </div>
               ))}
             </div>
+
+            {/* UNMATCHED & INELIGIBLE WELFARE SCHEMES (INFINITE-SCROLL LAZY LOADER) */}
+            <UnmatchedSchemesDropdown
+              profile={profile}
+              verifiedDocCodes={verifiedDocCodes}
+              currentLang={currentLang}
+              matchedSchemeIds={schemes.map((s) => s.id)}
+            />
           </section>
         )}
       </main>

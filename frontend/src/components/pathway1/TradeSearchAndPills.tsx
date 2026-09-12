@@ -121,8 +121,8 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition cursor-pointer flex-shrink-0"
-                title="Clear search"
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer flex-shrink-0"
+                title={currentLang === 'hi' ? 'खोज हटाएं' : 'Clear search'}
               >
                 <X className="w-4 h-4" />
               </button>

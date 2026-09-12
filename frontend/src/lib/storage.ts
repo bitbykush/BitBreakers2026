@@ -1,4 +1,5 @@
-import { ApplicantProfile, DocumentRecord, DigiLockerRecord } from '../types';
+import { ApplicantProfile, DocumentRecord, DigiLockerRecord, Gender, SocialCategory, AreaType } from '../types';
+import { calculateAge } from './dateUtils';
 
 const STORAGE_KEYS = {
   SESSION_ID: 'udyamsetu_session_id',
@@ -13,20 +14,25 @@ const STORAGE_KEYS = {
 export const DEFAULT_PROFILE: ApplicantProfile = {
   name: '',
   dob: '',
-  gender: 'Female',
-  category: 'General',
+  age: undefined,
+  gender: '' as Gender,
+  category: '' as SocialCategory,
   annualIncome: 0,
   state: '',
   district: '',
-  areaType: 'Rural',
-  education: '10th',
+  areaType: '' as AreaType,
+  education: 'N/A',
   profession: '',
   professionHi: '',
   requiredCapital: 0,
+  address: '',
+  pincode: '',
   maskedAadhaar: '',
   casteCertificateNo: '',
   incomeCertificateNo: '',
   marksPercentage: 0,
+  mobileNumber: '',
+  email: '',
 };
 
 export const DEFAULT_DOCUMENTS: DocumentRecord[] = [
@@ -87,6 +93,17 @@ export const StorageService = {
     if (typeof window === 'undefined') return DEFAULT_PROFILE;
     const current = this.getProfile();
     const updated = { ...current, ...profile };
+
+    // Automatically calculate and update age whenever dob is present
+    if (updated.dob && updated.dob.trim().length > 0) {
+      const calculated = calculateAge(updated.dob);
+      if (calculated !== null) {
+        updated.age = calculated;
+      }
+    } else {
+      updated.age = undefined;
+    }
+
     localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
     return updated;
   },
