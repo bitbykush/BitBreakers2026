@@ -50,7 +50,7 @@ scheme-seva-kendra/
 │   │   │   ├── gemini_fallback.py      # Gemini 1.5 Flash Vision client
 │   │   │   └── matcher.py              # Hybrid SQL filter + FastEmbed cosine
 │   │   ├── api/v1/
-│   │   │   ├── routes_schemes.py       # Scheme query & match endpoints
+│   │   │   ├── routes_schemes.py       # Scheme query, match & comparative analytics endpoints
 │   │   │   ├── routes_ocr.py           # Targeted document extraction endpoint
 │   │   │   ├── routes_kyc.py           # DigiLocker mock eKYC endpoint
 │   │   │   └── routes_dev.py           # Hidden Dev HUD health & toggle API

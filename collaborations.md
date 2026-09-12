@@ -140,6 +140,9 @@ Neither Dev 1 nor Dev 2 may alter the API request or response signatures without
 5. **`GET /api/v1/schemes/{id}` / Extended Model**:
    - Supports the official myScheme.gov.in details dossier (`/schemes/[id]`).
    - Returns: Comprehensive metadata with `benefits: string[]`, `eligibility_criteria: string[]`, `application_process: string[]`, `faqs: [{ question, answer }]`, `sources_and_references: [{ title, url }]`, and `tags: string[]`.
+6. **`GET /api/v1/schemes/compare`**:
+   - Accepts: `scheme_a={id_or_code}&scheme_b={id_or_code}`
+   - Returns: `{ schemeA: SchemeMatch, schemeB: SchemeMatch, comparisonSummary: { grantSubsidyDiffPercentage, maxGrantAmountDiff, loanPercentageDiff, promoterMarginDiff, commonDocuments: [], uniqueDocumentsA: [], uniqueDocumentsB: [] } }`
 
 ---
 

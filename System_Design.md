@@ -188,41 +188,46 @@ class TargetedDocumentExtractor:
 
     def extract_marksheet(self, text_lines: List[str]) -> Dict[str, Any]:
         """
-        Targeted Extractor for Marksheet / Educational Certificate:
-        Extracts ONLY Percentage and Highest Education Qualification.
+        Targeted Extractor for Marksheet / Academic Certificate across all Indian boards & colleges:
+        - Classifies education: 10th | 12th | ITI | Graduate | PostGraduate
+        - Extracts student name via positional certificate heuristics
+        - Extracts candidate date of birth
+        - Bypasses fragile marks math to ensure cross-board compatibility
         """
-        data = {"marks_percentage": None, "highest_education": None}
+        data: Dict[str, Any] = {
+            "highest_education": None,
+            "name": None,
+            "dob": None,
+            "certificate_number": None,
+            "marks_percentage": None,
+        }
         full_text = " ".join(text_lines)
 
-        # 1. Regex: Percentage
-        pct_match = re.search(r'\b([4-9][0-9](?:\.[0-9]{1,2})?)\s?%', full_text)
-        if pct_match:
-            data["marks_percentage"] = float(pct_match.group(1))
+        # 1. Multi-Board Qualification Hierarchy Matcher
+        data["highest_education"] = classify_education_level(full_text)
 
-        # 2. FastEmbed Semantic Qualification Matcher
-        edu_anchors = {
-            "10TH_PASS": "secondary school examination matric 10th class board ssc",
-            "12TH_PASS": "senior secondary higher secondary intermediate 12th class hsc",
-            "GRADUATE": "bachelor degree graduation btech bsc bcom ba engineering",
-            "DIPLOMA": "polytechnic diploma vocational certificate"
-        }
-        edu_keys = list(edu_anchors.keys())
-        edu_vectors = list(self.embedder.embed(list(edu_anchors.values())))
+        # 2. Student Name Heuristics (Preceding/Following certification cues)
+        for idx, line in enumerate(text_lines):
+            upper = line.upper()
+            if any(c in upper for c in ["THIS IS TO CERTIFY THAT", "CERTIFY THAT", "NAME OF CANDIDATE", "CANDIDATE NAME"]):
+                if idx + 1 < len(text_lines):
+                    name_cand = clean_human_name(text_lines[idx + 1])
+                    if name_cand and len(name_cand.split()) >= 2:
+                        data["name"] = name_cand
+                        break
+            if "ROLL NO" in upper and idx > 0:
+                name_cand = clean_human_name(text_lines[idx - 1])
+                if name_cand and len(name_cand.split()) >= 2:
+                    data["name"] = name_cand
+                    break
 
-        if text_lines:
-            line_vectors = list(self.embedder.embed(text_lines))
-            best_sim = 0.0
-            best_edu = "10TH_PASS"
-
-            for line_vec in line_vectors:
-                for j, edu_key in enumerate(edu_keys):
-                    anchor_vec = edu_vectors[j]
-                    sim = float(np.dot(line_vec, anchor_vec) / (np.linalg.norm(line_vec) * np.linalg.norm(anchor_vec)))
-                    if sim > best_sim and sim > 0.60:
-                        best_sim = sim
-                        best_edu = edu_key
-
-            data["highest_education"] = best_edu
+        # 3. Date of Birth Extraction
+        for idx, line in enumerate(text_lines):
+            if any(c in line.upper() for c in ["DATE OF BIRTH", "DOB", "जन्म तिथि"]):
+                dob_match = re.search(r'\b(\d{2}[/-]\d{2}[/-]\d{4})\b', line)
+                if dob_match:
+                    data["dob"] = dob_match.group(1)
+                    break
 
         return data
 ```
@@ -590,5 +595,101 @@ export interface SchemeMatch {
 | **Magnifier Lens** | `#magnifier-lens` | 192px circular spotlight tracking `(clientX, clientY)` with 2x enlarged text preview |
 | **Reading Guide** | `#reading-guide` | Horizontal semi-transparent ruler with yellow focus lines tracking `clientY` |
 | **Dyslexia Typography** | `html.a11y-dyslexia` | `letter-spacing: 0.06em; word-spacing: 0.12em; line-height: 1.8` |
+
+---
+
+## 8. Comparative Analytics Engine & Interactive 2-Scheme Architecture
+
+To replace static multi-scheme comparison tables with an interactive, user-driven system, Scheme Seva Kendra provides a dedicated side-by-side comparative analytics engine spanning backend and frontend:
+
+### 8.1 Backend API Specification: `GET /api/v1/schemes/compare`
+- **Route**: `GET /api/v1/schemes/compare?scheme_a={id}&scheme_b={id}`
+- **Query Parameters**:
+  - `scheme_a`: Scheme ID or unique code (e.g. `pm-vishwakarma`).
+  - `scheme_b`: Scheme ID or unique code (e.g. `pm-egp`).
+- **Response Schema (`SchemeComparisonResponse`)**:
+```json
+{
+  "schemeA": {
+    "id": "pm-vishwakarma",
+    "code": "PM_VISHWAKARMA",
+    "nameEn": "PM Vishwakarma Kaushal Samman",
+    "nameHi": "प्रधानमंत्री विश्वकर्मा कौशल सम्मान योजना",
+    "financials": {
+      "grantSubsidyPercentage": 15.0,
+      "maxGrantAmount": 15000.0,
+      "loanPercentage": 85.0,
+      "promoterMarginPercentage": 0.0,
+      "subsidizedInterestRate": 5.0,
+      "moratoriumPeriodMonths": 3,
+      "collateralRequired": false
+    },
+    "requiredDocuments": ["DOC_AADHAAR", "DOC_CASTE"]
+  },
+  "schemeB": {
+    "id": "pm-egp",
+    "code": "PMEGP",
+    "nameEn": "Prime Minister's Employment Generation Programme (PMEGP)",
+    "nameHi": "प्रधानमंत्री रोजगार सृजन कार्यक्रम (PMEGP)",
+    "financials": {
+      "grantSubsidyPercentage": 35.0,
+      "maxGrantAmount": 1750000.0,
+      "loanPercentage": 60.0,
+      "promoterMarginPercentage": 5.0,
+      "subsidizedInterestRate": 8.5,
+      "moratoriumPeriodMonths": 6,
+      "collateralRequired": false
+    },
+    "requiredDocuments": ["DOC_AADHAAR", "DOC_CASTE", "DOC_RURAL", "DOC_INCOME"]
+  },
+  "comparisonSummary": {
+    "grantSubsidyDiffPercentage": -20.0,
+    "maxGrantAmountDiff": -1735000.0,
+    "loanPercentageDiff": 25.0,
+    "promoterMarginDiff": -5.0,
+    "commonDocuments": ["DOC_AADHAAR", "DOC_CASTE"],
+    "uniqueDocumentsA": [],
+    "uniqueDocumentsB": ["DOC_RURAL", "DOC_INCOME"]
+  }
+}
+```
+
+### 8.2 Summary Differentials Algorithm
+The backend computes statutory financial and document differentials in $O(1)$ time:
+1. **Grant Subsidy Differential**: $\Delta_{\text{grant}} = \text{grant}_A - \text{grant}_B$.
+2. **Loan Ceiling Differential**: $\Delta_{\text{loan}} = \text{max\_grant}_A - \text{max\_grant}_B$.
+3. **Promoter Margin Differential**: $\Delta_{\text{margin}} = \text{margin}_A - \text{margin}_B$.
+4. **Document Set Operations**:
+   - $\text{Common} = \mathcal{D}_A \cap \mathcal{D}_B$
+   - $\text{Unique}_A = \mathcal{D}_A \setminus \mathcal{D}_B$
+   - $\text{Unique}_B = \mathcal{D}_B \setminus \mathcal{D}_A$
+
+### 8.3 Frontend UI State Machine (`CompareDrawer.tsx`)
+The frontend drawer maintains an interactive 2-phase state machine:
+```
+┌────────────────────────────────────────────────────────┐
+│ Drawer Opened with initialScheme (Scheme 1)            │
+└───────────────────────────┬────────────────────────────┘
+                            │
+              Is Scheme 2 (schemeB) selected?
+             /                               \
+         NO /                                 \ YES
+           ▼                                   ▼
+┌────────────────────────────────┐  ┌────────────────────────────────┐
+│ PHASE 1: ASKING & SELECTION    │  │ PHASE 2: STRICT 2-SCHEME MATRIX│
+│ • Prompt: "Which scheme to     │  │ • Side-by-side 2 columns only  │
+│   compare with [Scheme 1]?"    │  │ • 10 Comparative Dimensions    │
+│ • Real-time search input       │  │ • Central ⇄ Swap Button        │
+│ • Filtered candidate cards     │  │ • Top dropdown scheme changers │
+│ • 1-click "Compare with this"  │  │ • Direct CTAs: Details & Apply │
+└────────────────────────────────┘  └────────────────────────────────┘
+```
+
+### 8.4 Ubiquitous Integration Points
+- `frontend/src/components/pathway1/BaselineMatchPreview.tsx`: Card-level and header compare buttons.
+- `frontend/src/app/page.tsx`: Pathway 2 card compare buttons and Stage 3 summary header button.
+- `frontend/src/app/dashboard/page.tsx`: Top action bar and card compare buttons.
+- `frontend/src/app/schemes/[id]/page.tsx`: Top breadcrumb actions and hero header compare badge.
+- `frontend/src/lib/api.ts`: `ApiService.compareSchemes(schemeAId, schemeBId)` with seamless local fallback to `MOCK_SCHEMES`.
 
 

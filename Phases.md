@@ -73,14 +73,23 @@
   DEV 1: Build Scheme Cards with Compatibility Gauge (0-100%) and Grant visualizer.
          Build official myScheme.gov.in Scheme Details Portal (/schemes/[id])
          with 8 navigation tabs, ScrollSpy, 10 interactive FAQs, and share links.
-         Build Side-by-Side Scheme Comparison Drawer & Financial Breakdown Drawer.
+         Build Interactive Side-by-Side 2-Scheme Comparison Drawer (CompareDrawer.tsx)
+         featuring asking workflow ("Which scheme to compare with Scheme 1?"), real-time
+         candidate search, strict 2-column comparative matrix, and ubiquitous Compare buttons
+         across all screens (Pathway 1 preview, Pathway 2 results, Dashboard, and Scheme Details).
+         Build Financial Breakdown Drawer.
          Build Android-Style Accessibility Suite: TalkBack screen reader (Web Speech Synthesis),
          WCAG AAA High Contrast (Yellow-on-black, Monochrome), Magnifier 2x spotlight lens,
          cursor reading guide ruler, and single unified header button.
          Build Hidden Dev HUD (`Ctrl + Shift + D` / triple tap logo).
-  DEV 2: Build Dynamic Document Resolver: checks `uploaded_document_codes` and
+  DEV 2: Build Comparative Analytics endpoint `GET /api/v1/schemes/compare` computing subsidy,
+         loan, margin differentials, and document requirements.
+         Build multi-board Marksheet educational level classifier (`classify_education_level`
+         covering 10th, 12th, ITI, Graduate, PostGraduate) across diverse state and central boards.
+         Build Dynamic Document Resolver: checks `uploaded_document_codes` and
          omits them from the scheme checklist. Build `/api/v1/dev/health`.
-  MILESTONE 4: Dev HUD allows toggling RapidOCR vs Gemini vs Mock mode live;
+  MILESTONE 4: Interactive 2-scheme comparator and comparative analytics API operational;
+               Dev HUD allows toggling RapidOCR vs Gemini vs Mock mode live;
                Accessibility Suite operational with TalkBack & High Contrast.
 
   HOURS 24:00 - 30:00 | SPRINT BLOCK 5: COMMON APP FORMAT & DIGILOCKER E-KYC
