@@ -501,12 +501,6 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
                 </span>
               )}
 
-            {extractedData.marks_percentage && (
-              <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
-                {extractedData.marks_percentage}% ({extractedData.highest_education})
-              </span>
-            )}
-
             <span className="text-emerald-700 ml-auto text-[11px] font-medium">
               Confidence: {extractedData.confidence}% • {extractedData.engine}
             </span>
