@@ -89,6 +89,8 @@ export interface OcrExtractedData {
   needs_permission?: boolean;
   prompt_message?: string;
   can_use_gemini?: boolean;
+  error_message?: string;
+  is_verified?: boolean;
 }
 
 export interface DigiLockerRecord {

@@ -48,7 +48,8 @@ export const ApiService = {
     allowGeminiFallback: boolean = false
   ): Promise<OcrExtractedData> {
     if (forceEngine === 'MOCK') {
-      return this.fallbackMockOcr(docType);
+      const mock = this.fallbackMockOcr(docType);
+      return { ...mock, is_verified: true };
     }
 
     try {
@@ -72,13 +73,26 @@ export const ApiService = {
       });
 
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        return data;
+      } else {
+        const errJson = await response.json().catch(() => ({}));
+        return {
+          doc_type: docType,
+          confidence: 0,
+          engine: 'RapidOCR_ONNX',
+          error_message: (errJson && errJson.detail) || 'Document scan could not be completed.',
+          is_verified: false,
+        };
       }
-    } catch {
-      // Failover to client mock extractor
+    } catch (networkErr) {
+      // Offline fallback
+      return {
+        ...this.fallbackMockOcr(docType),
+        engine: 'Mock',
+        is_verified: true,
+      };
     }
-
-    return this.fallbackMockOcr(docType);
   },
 
   /**

@@ -19,15 +19,12 @@ import {
   ExternalLink,
   ChevronRight,
   ChevronDown,
-  Share2,
-  Copy,
   Check,
   ThumbsUp,
   ThumbsDown,
   Sun,
   Layers,
   FileQuestion,
-  BellRing,
   BookOpen,
 } from 'lucide-react';
 
@@ -81,9 +78,6 @@ export default function SchemeDetailsPage() {
 
   // Accordion state for FAQs: first 2 items open by default
   const [openFaqIndices, setOpenFaqIndices] = useState<number[]>([0, 1]);
-
-  // Copy link feedback
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // Feedback widget state
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<null | 'helpful' | 'unhelpful'>(null);
@@ -157,14 +151,6 @@ export default function SchemeDetailsPage() {
     );
   };
 
-  const handleCopyShareLink = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2500);
-    }
-  };
-
   // Detailed Document Definitions
   const DOCUMENT_DETAILS: Record<
     string,
@@ -226,9 +212,6 @@ export default function SchemeDetailsPage() {
     );
   });
 
-  const shareUrl = typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : '';
-  const shareTitle = encodeURIComponent(`${scheme.nameEn} - Scheme Seva Kendra`);
-
   return (
     <div className="min-h-screen flex flex-col justify-between bg-slate-50 text-slate-800">
       {/* Official Top Header */}
@@ -262,10 +245,10 @@ export default function SchemeDetailsPage() {
           <button
             type="button"
             onClick={() => router.push('/apply')}
-            className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+            className="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
           >
-            <span>{currentLang === 'hi' ? 'कस्टम विवरण भरें (Pathway 2)' : 'Fill Custom Details (Pathway 2)'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>{currentLang === 'hi' ? 'कस्टम विवरण भरें' : 'Fill Custom Details'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -352,7 +335,7 @@ export default function SchemeDetailsPage() {
           </aside>
 
           {/* Center Scrollable Content Panel */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="lg:col-span-9 space-y-6">
             {/* 1. DETAILS SECTION */}
             <section
               id="details"
@@ -515,7 +498,7 @@ export default function SchemeDetailsPage() {
                   onClick={() => router.push('/apply')}
                   className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
                 >
-                  <span>{currentLang === 'hi' ? 'ऑनलाइन आवेदन हेतु कस्टम विवरण भरें' : 'Fill Custom Details & Apply in Pathway 2'}</span>
+                  <span>{currentLang === 'hi' ? 'ऑनलाइन आवेदन हेतु कस्टम विवरण भरें' : 'Fill Custom Details & Apply'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -766,129 +749,6 @@ export default function SchemeDetailsPage() {
               </div>
             </section>
           </div>
-
-          {/* Right Sidebar: News & Updates, Share, Apply Action */}
-          <aside className="lg:col-span-3 space-y-5 lg:sticky lg:top-6">
-            {/* Direct Action Card */}
-            <div className="bg-gradient-to-br from-indigo-950 to-indigo-900 text-white rounded-2xl p-5 sm:p-6 space-y-4 shadow-md">
-              <div>
-                <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest block">
-                  FELLOWSHIP &amp; GRANT SUMMARY
-                </span>
-                <div className="text-2xl font-black text-white mt-1">
-                  100% Direct Grant
-                </div>
-                <p className="text-xs text-indigo-200 mt-1">
-                  Fellowship stipend ₹1,00,000/mo + ₹5,00,000/yr research contingency.
-                </p>
-              </div>
-
-              <div className="pt-3 border-t border-indigo-800/80 space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-indigo-300">Collateral:</span>
-                  <span className="font-bold text-emerald-400">100% Free</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-indigo-300">Tenure:</span>
-                  <span className="font-bold text-white">3 to 5 Years</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-indigo-300">Category:</span>
-                  <span className="font-bold text-white">All (Gen/OBC/SC/ST)</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => router.push('/apply')}
-                className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
-              >
-                <span>{currentLang === 'hi' ? 'आवेदन हेतु कस्टम विवरण भरें' : 'Fill Custom Details & Apply'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* News and Updates Card (from screenshot) */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <BellRing className="w-3.5 h-3.5 text-blue-600" />
-                  <span>News and Updates</span>
-                </h3>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-
-              <ul className="space-y-2.5 text-xs text-slate-600">
-                <li className="pb-2 border-b border-slate-100 last:border-0 last:pb-0">
-                  <span className="font-bold text-slate-800 block text-[11px] text-blue-700">12 Sep 2026</span>
-                  <span>Annual National Solar Science Research Fellow call for dossiers is open under MNRE guidelines.</span>
-                </li>
-                <li className="pb-2 border-b border-slate-100 last:border-0 last:pb-0">
-                  <span className="font-bold text-slate-800 block text-[11px] text-blue-700">01 Aug 2026</span>
-                  <span>Host institution lab infrastructure overhead allocation increased for next research cycle.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Share Scheme Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Share2 className="w-3.5 h-3.5 text-blue-600" />
-                <span>Share this scheme</span>
-              </h3>
-
-              <div className="grid grid-cols-4 gap-2">
-                {/* WhatsApp */}
-                <a
-                  href={`https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Share on WhatsApp"
-                  className="p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center transition"
-                >
-                  <span className="font-bold text-xs">WA</span>
-                </a>
-
-                {/* Telegram */}
-                <a
-                  href={`https://t.me/share/url?url=${shareUrl}&text=${shareTitle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Share on Telegram"
-                  className="p-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 flex items-center justify-center transition"
-                >
-                  <span className="font-bold text-xs">TG</span>
-                </a>
-
-                {/* Twitter / X */}
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${shareTitle}&url=${shareUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Share on X"
-                  className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition"
-                >
-                  <span className="font-bold text-xs">X</span>
-                </a>
-
-                {/* Copy Link Button */}
-                <button
-                  type="button"
-                  onClick={handleCopyShareLink}
-                  title="Copy Page Link"
-                  className="p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 flex items-center justify-center transition cursor-pointer"
-                >
-                  {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {copiedLink && (
-                <p className="text-[11px] text-emerald-600 font-bold text-center">
-                  Link copied to clipboard!
-                </p>
-              )}
-            </div>
-          </aside>
         </div>
       </main>
 

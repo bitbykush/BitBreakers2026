@@ -40,9 +40,6 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] flex-shrink-0">
-            <span className="hidden md:inline bg-indigo-900/80 text-orange-300 px-2 py-0.5 rounded border border-orange-500/30">
-              🔒 {currentLang === 'hi' ? 'जीरो-लॉगिन खुली पहुंच' : 'Zero-Login Open Access'}
-            </span>
             <span className="text-indigo-300">MoSJE & MoMSME Compatible</span>
           </div>
         </div>
@@ -79,20 +76,20 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
             {/* Single Unified Accessibility Button */}
             <button
-              className="h-9 px-2.5 sm:px-3 rounded-xl border border-indigo-200/90 bg-indigo-50/70 hover:bg-indigo-100/90 text-indigo-950 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs group cursor-pointer"
+              className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs group cursor-pointer"
               onClick={() => setIsA11yMenuOpen(true)}
               title="Accessibility Menu (TalkBack Screen Reader, High Contrast, Zoom) / सुगमता मेनू"
               aria-label="Open Accessibility Menu"
             >
-              <Accessibility className="w-4 h-4 text-indigo-700 group-hover:scale-110 transition-transform flex-shrink-0" />
-              <span className="font-extrabold text-xs text-indigo-950">Accessibility</span>
-              <span className="hidden md:inline text-slate-500 font-normal text-[11px]">| सुगमता</span>
+              <Accessibility className="w-3.5 h-3.5 text-indigo-700 group-hover:scale-110 transition-transform flex-shrink-0" />
+              <span className="font-bold text-xs text-slate-900">Accessibility</span>
+              <span className="hidden md:inline text-slate-400 font-normal text-[11px]">| सुगमता</span>
             </button>
 
             {/* Bilingual Switcher */}
             <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-2xs">
               <button
-                className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+                className={`px-2 py-1 text-xs font-semibold rounded-md transition cursor-pointer ${
                   currentLang === 'en'
                     ? 'bg-indigo-950 text-white shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -102,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
                 EN
               </button>
               <button
-                className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+                className={`px-2 py-1 text-xs font-semibold rounded-md transition cursor-pointer ${
                   currentLang === 'hi'
                     ? 'bg-indigo-950 text-white shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'

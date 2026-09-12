@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Banknote, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { X, Banknote, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { SchemeMatch, ApplicantProfile } from '@/types';
 
 interface FinancialAnalysisDrawerProps {
@@ -9,7 +9,7 @@ interface FinancialAnalysisDrawerProps {
   onClose: () => void;
   scheme: SchemeMatch | null;
   profile: ApplicantProfile;
-  onProceedPathway2: () => void;
+  onProceedPathway2?: () => void;
   currentLang: 'en' | 'hi';
 }
 
@@ -61,9 +61,9 @@ export const FinancialAnalysisDrawer: React.FC<FinancialAnalysisDrawerProps> = (
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition"
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -148,29 +148,13 @@ export const FinancialAnalysisDrawer: React.FC<FinancialAnalysisDrawerProps> = (
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100 transition"
+            className="w-full sm:w-auto h-9 px-5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition cursor-pointer"
           >
-            {currentLang === 'hi' ? 'बंद करें' : 'Close'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onProceedPathway2();
-            }}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-1.5 active:scale-95"
-          >
-            <span>
-              {currentLang === 'hi'
-                ? 'विस्तृत फॉर्म पर आगे बढ़ें (Pathway 2)'
-                : 'Proceed with Pathway 2 (Pre-Fill Form)'}
-            </span>
-            <ArrowRight className="w-4 h-4" />
+            {currentLang === 'hi' ? 'बंद करें (Close)' : 'Close (बंद करें)'}
           </button>
         </div>
       </div>
