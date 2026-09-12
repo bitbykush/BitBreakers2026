@@ -782,7 +782,11 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
                 {currentLang === 'hi' ? 'स्कैन नोटिस' : 'Scan Notice'}
               </p>
               <p className="text-xs text-rose-800 mt-0.5 leading-relaxed">
-                {unverifiedMessage}
+                {typeof unverifiedMessage === 'string'
+                  ? unverifiedMessage
+                  : typeof unverifiedMessage === 'object' && unverifiedMessage !== null
+                  ? JSON.stringify(unverifiedMessage)
+                  : String(unverifiedMessage || '')}
               </p>
               {currentFileDataUrl && (
                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-rose-200/60">

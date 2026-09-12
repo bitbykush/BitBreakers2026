@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Strict Memory & Processing Guardrails (Render Free Tier 512MB)
-    MAX_IMAGE_DIM: int = 1280
+    MAX_IMAGE_DIM: int = 960
     RAM_CEILING_MB: float = 512.0
     RAM_WARNING_THRESHOLD_MB: float = 380.0
     RAM_CRITICAL_THRESHOLD_MB: float = 440.0

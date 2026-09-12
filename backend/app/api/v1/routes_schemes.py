@@ -136,17 +136,32 @@ def compare_schemes(
     )
 
 
-@router.get("/{scheme_id}", response_model=SchemeMatch)
-def get_scheme_by_id(scheme_id: str):
+@router.get("/match", response_model=SchemeMatchResponse)
+def get_match_schemes(
+    profession: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    annual_income_inr: Optional[float] = Query(120000.0),
+    gender: Optional[str] = Query(None),
+    area: Optional[str] = Query(None),
+    education: Optional[str] = Query(None),
+    required_capital_inr: Optional[float] = Query(100000.0),
+):
     """
-    Retrieves full details of a specific welfare or scholarship scheme by ID or code.
+    GET probe/fallback for Pathway 2 Matcher Endpoint.
+    Returns matched schemes using query parameters or defaults.
     """
     matcher = get_scheme_matcher()
-    s = matcher.get_scheme_by_id(scheme_id)
-    if not s:
-        raise HTTPException(status_code=404, detail=f"Scheme with ID '{scheme_id}' not found.")
-
-    return _to_scheme_match(s)
+    req = SchemeMatchRequest(
+        profession=profession or "",
+        category=category or "",
+        annual_income_inr=annual_income_inr or 120000.0,
+        gender=gender or "",
+        area=area or "",
+        education=education or "",
+        required_capital_inr=required_capital_inr or 100000.0,
+        uploaded_document_codes=[]
+    )
+    return matcher.match_schemes(req)
 
 
 @router.post("/match", response_model=SchemeMatchResponse)
@@ -169,3 +184,20 @@ def quick_match_schemes(request: QuickMatchRequest):
     """
     matcher = get_scheme_matcher()
     return matcher.quick_match(request)
+
+
+@router.get("/{scheme_id}", response_model=SchemeMatch)
+def get_scheme_by_id(scheme_id: str):
+    """
+    Retrieves full details of a specific welfare or scholarship scheme by ID or code.
+    Placed after static routes to avoid shadowing /match or /compare.
+    """
+    if scheme_id.lower() in ("match", "quick-match", "compare"):
+        raise HTTPException(status_code=404, detail=f"Scheme with ID '{scheme_id}' not found.")
+
+    matcher = get_scheme_matcher()
+    s = matcher.get_scheme_by_id(scheme_id)
+    if not s:
+        raise HTTPException(status_code=404, detail=f"Scheme with ID '{scheme_id}' not found.")
+
+    return _to_scheme_match(s)

@@ -118,11 +118,19 @@ export const ApiService = {
         return data;
       } else {
         const errJson = await response.json().catch(() => ({}));
+        let errorMsg = 'Document scan could not be completed.';
+        if (typeof errJson?.detail === 'string') {
+          errorMsg = errJson.detail;
+        } else if (Array.isArray(errJson?.detail)) {
+          errorMsg = errJson.detail.map((d: any) => (typeof d === 'object' && d ? d.msg || JSON.stringify(d) : String(d))).join('; ');
+        } else if (errJson?.detail && typeof errJson.detail === 'object') {
+          errorMsg = JSON.stringify(errJson.detail);
+        }
         return {
           doc_type: docType,
           confidence: 0,
           engine: 'RapidOCR_ONNX',
-          error_message: (errJson && errJson.detail) || 'Document scan could not be completed.',
+          error_message: errorMsg,
           is_verified: false,
         };
       }
@@ -195,97 +203,9 @@ export const ApiService = {
   },
 
   /**
-   * Local deterministic fallback matcher with trade-relevance gating.
+   * Local deterministic fallback matcher.
    */
   fallbackMatchSchemes(profile: ApplicantProfile, verifiedDocCodes: string[]): SchemeMatch[] {
-    const rawQuery = (profile.profession || '').trim().toLowerCase();
-
-    // If a search query is provided, enforce strict trade relevance
-    if (rawQuery.length > 0) {
-      const STOP_WORDS = new Set([
-        'in', 'for', 'and', 'the', 'a', 'an', 'to', 'of', 'with', 'is', 'at', 'by', 'from',
-        'need', 'want', 'loan', 'grant', 'subsidy', 'scheme', 'business', 'work', 'project',
-        'काम', 'के', 'लिए', 'चाहिए', 'लोन', 'ऋण', 'योजना', 'सरकारी', 'मुझे', 'का', 'की',
-        'में', 'से', 'पर', 'है', 'हुनर', 'व्यापार', 'दुकानदार', 'दुकान'
-      ]);
-
-      const SYNONYM_CLUSTERS = [
-        ['potter', 'pottery', 'terracotta', 'clay', 'pot', 'pots', 'artisan', 'कुम्हार', 'माटी', 'बर्तन', 'मिट्टी'],
-        ['tailor', 'tailoring', 'garment', 'garments', 'handloom', 'sewing', 'boutique', 'textile', 'clothes', 'सिलाई', 'दर्जी', 'कपड़े'],
-        ['vendor', 'street vendor', 'thela', 'cart', 'stall', 'fruit stall', 'vegetable', 'shop', 'shopkeeper', 'store', 'रेहड़ी', 'पटरी', 'ठेला', 'दुकान', 'सब्जी', 'फल', 'ठेले'],
-        ['dairy', 'milk', 'cow', 'buffalo', 'cattle', 'livestock', 'animal husbandry', 'डेयरी', 'दूध', 'पशुपालन', 'गाय', 'भैंस'],
-        ['solar', 'solar panel', 'renewable', 'energy', 'photovoltaic', 'scientist', 'research', 'sun', 'rooftop', 'सोलर', 'सौर', 'छत'],
-        ['carpenter', 'carpentry', 'wood', 'furniture', 'woodwork', 'बढ़ई', 'काष्ठकला', 'लकड़ी', 'फर्नीचर'],
-        ['blacksmith', 'lohar', 'iron', 'metal', 'welder', 'welding', 'लोहार', 'धातु', 'लोहा'],
-        ['weaver', 'weaving', 'bamboo', 'basket', 'handloom', 'carpet', 'बुनकर', 'बांस', 'टोकरी'],
-        ['cobbler', 'leather', 'footwear', 'shoes', 'shoe', 'मोची', 'चर्मकार', 'जूता', 'चप्पल'],
-        ['barber', 'salon', 'hair', 'beauty parlour', 'beauty', 'नाई', 'सैलून', 'ब्यूटी', 'बाल'],
-        ['student', 'scholarship', 'college', 'school', 'degree', 'education', 'study', 'fee', 'fees', 'छात्र', 'छात्रवृत्ति', 'पढ़ाई', 'शिक्षा'],
-        ['fisheries', 'fish', 'aquaculture', 'pond', 'fisherman', 'मछली', 'मत्स्य', 'मछुआरा', 'तालाब'],
-        ['farmer', 'farming', 'agriculture', 'kisan', 'crop', 'tractor', 'खेती', 'किसान', 'कृषि', 'फसल'],
-        ['food', 'catering', 'dhaba', 'restaurant', 'canteen', 'processing', 'pickle', 'masala', 'bakery', 'sweets', 'खान-पान', 'ढाबा', 'अचार', 'मसाला', 'मिठाई', 'बेकरी'],
-        ['mechanic', 'repair', 'garage', 'vehicle', 'automobile', 'ev', 'motor', 'bike', 'car', 'मैकेनिक', 'मरम्मत', 'गैराज']
-      ];
-
-      const TRADE_SYNONYMS: Record<string, string[]> = {};
-      for (const cluster of SYNONYM_CLUSTERS) {
-        for (const word of cluster) {
-          TRADE_SYNONYMS[word.toLowerCase()] = cluster.filter((w) => w !== word).map((w) => w.toLowerCase());
-        }
-      }
-
-      const rawTokens = rawQuery.match(/[\w\u0900-\u097F]+/g) || [];
-      const tokens = rawTokens.filter((t) => !STOP_WORDS.has(t) && t.length >= 2);
-      const effectiveTokens = tokens.length > 0 ? tokens : rawTokens.filter((t) => t.length >= 2);
-
-      if (effectiveTokens.length === 0) {
-        return [];
-      }
-
-      const expandedList: string[] = [...effectiveTokens];
-      for (const tok of effectiveTokens) {
-        if (TRADE_SYNONYMS[tok]) {
-          TRADE_SYNONYMS[tok].forEach((s) => expandedList.push(s));
-        }
-      }
-
-      const isScholarshipQuery = effectiveTokens.some((tok) =>
-        ['student', 'scholarship', 'college', 'school', 'degree', 'education', 'study', 'छात्र', 'छात्रवृत्ति', 'पढ़ाई'].includes(tok)
-      );
-
-      const UNIVERSAL_CODES = new Set(['PMEGP', 'MUDRA_SHISHU', 'MUDRA_KISHORE', 'MUDRA_TARUN', 'CGTMSE']);
-
-      const filtered = MOCK_SCHEMES.filter((scheme) => {
-        const corpus = `${scheme.nameEn} ${scheme.nameHi} ${scheme.descriptionEn} ${scheme.descriptionHi} ${(scheme.tags || []).join(' ')} ${scheme.categoryBadge} ${scheme.eligibilityHighlights.join(' ')}`.toLowerCase();
-        const matchesTrade = expandedList.some((tok) => corpus.includes(tok));
-        const matchesUniversal = UNIVERSAL_CODES.has(scheme.code) && !isScholarshipQuery;
-        return matchesTrade || matchesUniversal;
-      });
-
-      // Strict rejection: zero matches for random inputs like 'asdfghjkl'
-      if (filtered.length === 0) {
-        return [];
-      }
-
-      return filtered.map((scheme) => {
-        let score = scheme.compatibilityPercentage;
-        if (profile.gender === 'Female') score = Math.min(99, score + 3);
-        if (profile.category === 'SC' || profile.category === 'ST') score = Math.min(99, score + 4);
-        if (profile.areaType === 'Rural') score = Math.min(99, score + 2);
-        if (profile.annualIncome > 250000 && scheme.code === 'PMS_OBC_SC') score = 0;
-
-        const missing = scheme.requiredDocuments.filter((docCode) => !verifiedDocCodes.includes(docCode));
-        const verified = scheme.requiredDocuments.filter((docCode) => verifiedDocCodes.includes(docCode));
-
-        return {
-          ...scheme,
-          compatibilityPercentage: Math.round(score * 10) / 10,
-          missingDocuments: missing,
-          verifiedDocuments: verified,
-        };
-      }).filter((s) => s.compatibilityPercentage > 0).sort((a, b) => b.compatibilityPercentage - a.compatibilityPercentage);
-    }
-
     return MOCK_SCHEMES.map((scheme) => {
       let score = scheme.compatibilityPercentage;
 
