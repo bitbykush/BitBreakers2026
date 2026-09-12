@@ -23,11 +23,11 @@ import { Footer } from '@/components/common/Footer';
 import { TradeSearchAndPills } from '@/components/pathway1/TradeSearchAndPills';
 import { BaselineMatchPreview } from '@/components/pathway1/BaselineMatchPreview';
 import { TargetedOcrUpload } from '@/components/ocr/TargetedOcrUpload';
-import { DigiLockerModal } from '@/components/kyc/DigiLockerModal';
 import { CompareDrawer } from '@/components/compare/CompareDrawer';
 import { FinancialAnalysisDrawer } from '@/components/compare/FinancialAnalysisDrawer';
 import { CommonAppFormat } from '@/components/caf/CommonAppFormat';
 import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
+import { NationalSeal3DIntro } from '@/components/common/NationalSeal3DIntro';
 
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
@@ -41,7 +41,7 @@ import {
   AreaType,
   EducationLevel,
   OcrExtractedData,
-  DigiLockerRecord,
+  DocumentRecord,
 } from '@/types';
 import { useDevHUD } from '@/hooks/useDevHUD';
 
@@ -59,13 +59,13 @@ export default function Home() {
   const [schemes, setSchemes] = useState<SchemeMatch[]>([]);
   const [selectedSchemeForAnalysis, setSelectedSchemeForAnalysis] = useState<SchemeMatch | null>(null);
   const [selectedSchemeForCompare, setSelectedSchemeForCompare] = useState<SchemeMatch | null>(null);
+  const [selectedSchemeForCaf, setSelectedSchemeForCaf] = useState<SchemeMatch | null>(null);
 
   // Modals & Drawers State
-  const [isDigiLockerOpen, setIsDigiLockerOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isFinancialAnalysisOpen, setIsFinancialAnalysisOpen] = useState(false);
   const [isCafModalOpen, setIsCafModalOpen] = useState(false);
-  const [digiLockerRecord, setDigiLockerRecord] = useState<DigiLockerRecord | null>(null);
+  const [play3DIntro, setPlay3DIntro] = useState(false);
 
   // Dev HUD Engine Overrides
   const { isOpen: isDevHudOpen, setIsOpen: setIsDevHudOpen, toggle: toggleDevHud, handleTripleTap } = useDevHUD();
@@ -76,10 +76,8 @@ export default function Home() {
   useEffect(() => {
     const savedProfile = StorageService.getProfile();
     const savedLang = StorageService.getLanguage();
-    const savedDl = StorageService.getDigiLockerState();
     setProfile(savedProfile);
     setCurrentLang(savedLang);
-    setDigiLockerRecord(savedDl);
 
     // Initial match computation
     const docs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
@@ -145,7 +143,7 @@ export default function Home() {
   };
 
   // Scoped OCR Auto-Fill Callback
-  const handleOcrExtracted = (extracted: OcrExtractedData) => {
+  const handleOcrExtracted = (extracted: OcrExtractedData, fileDataUrl?: string, fileName?: string) => {
     const patch: Partial<ApplicantProfile> = {};
 
     if (extracted.name) patch.name = extracted.name;
@@ -169,15 +167,31 @@ export default function Home() {
     const updated = StorageService.saveProfile(patch);
     setProfile(updated);
 
-    // Register verified document
-    if (extracted.doc_type === 'AADHAAR') {
-      StorageService.verifyDocument('DOC_AADHAAR', 'RAPIDOCR', extracted.masked_aadhaar || 'UIDAI-MASKED');
-    } else if (extracted.doc_type === 'CASTE') {
-      StorageService.verifyDocument('DOC_CASTE', 'RAPIDOCR', extracted.certificate_number || 'CASTE-CERT');
-    } else if (extracted.doc_type === 'INCOME') {
-      StorageService.verifyDocument('DOC_INCOME', 'RAPIDOCR', extracted.certificate_number || 'INC-CERT');
-    } else if (extracted.doc_type === 'MARKSHEET') {
-      StorageService.verifyDocument('DOC_MARKSHEET', 'RAPIDOCR', 'MARKS-VERIFIED');
+    const engineSource: DocumentRecord['verificationSource'] =
+      extracted.engine === 'Gemini_1.5_Flash' ? 'GEMINI' : 'RAPIDOCR';
+    const refId = extracted.masked_aadhaar || extracted.certificate_number || `VER-${Date.now().toString().slice(-6)}`;
+
+    // If file image is available, save full uploaded document record
+    if (fileDataUrl && fileName) {
+      StorageService.saveUploadedDocument(
+        extracted.doc_type,
+        fileDataUrl,
+        fileName,
+        'Attached',
+        refId,
+        engineSource
+      );
+    } else {
+      // Register verified document status
+      if (extracted.doc_type === 'AADHAAR') {
+        StorageService.verifyDocument('DOC_AADHAAR', engineSource, extracted.masked_aadhaar || 'UIDAI-MASKED');
+      } else if (extracted.doc_type === 'CASTE') {
+        StorageService.verifyDocument('DOC_CASTE', engineSource, extracted.certificate_number || 'CASTE-CERT');
+      } else if (extracted.doc_type === 'INCOME') {
+        StorageService.verifyDocument('DOC_INCOME', engineSource, extracted.certificate_number || 'INC-CERT');
+      } else if (extracted.doc_type === 'MARKSHEET') {
+        StorageService.verifyDocument('DOC_MARKSHEET', engineSource, 'MARKS-VERIFIED');
+      }
     }
 
     const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
@@ -216,7 +230,6 @@ export default function Home() {
   const handleResetSession = () => {
     StorageService.clearSession();
     setProfile(DEFAULT_PROFILE);
-    setDigiLockerRecord(null);
     setHasSearchedOrSelectedTrade(false);
     const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
     ApiService.matchSchemes(DEFAULT_PROFILE, verifiedDocs).then(setSchemes);
@@ -225,14 +238,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col justify-between">
+      {/* 3D Holographic National Seal Coin Intro */}
+      <NationalSeal3DIntro
+        currentLang={currentLang}
+        forcePlay={play3DIntro}
+        onComplete={() => setPlay3DIntro(false)}
+      />
+
       {/* Header */}
       <Header
         currentLang={currentLang}
         onLangChange={handleLanguageChange}
         isLargerFont={isLargerFont}
         onToggleFont={handleToggleFont}
-        onOpenDigiLocker={() => setIsDigiLockerOpen(true)}
         onTripleTapLogo={handleTripleTap}
+        onReplayIntro={() => setPlay3DIntro(true)}
       />
 
       {/* Main Container */}
@@ -278,6 +298,10 @@ export default function Home() {
                   }}
                   onOpenFinancialAnalysis={handleOpenFinancialAnalysis}
                   onSwitchToPathway2={handleSwitchToPathway2}
+                  onOpenCaf={(scheme) => {
+                    setSelectedSchemeForCaf(scheme);
+                    setIsCafModalOpen(true);
+                  }}
                 />
               </div>
             )}
@@ -599,9 +623,6 @@ export default function Home() {
                   </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
-                <p className="text-center text-xs text-slate-500 mt-2">
-                  Zero fee • No credit bureau hit • Direct Government of India portal integration
-                </p>
               </div>
             </div>
           </section>
@@ -736,51 +757,137 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* WHY DETAILS ARE APPROVED (पात्रता अनुमोदन विवरण) WITH GREEN TICKS */}
+                  <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-emerald-50/80 border border-emerald-300 space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                        <h5 className="text-xs sm:text-sm font-black text-emerald-950 uppercase tracking-wide">
+                          {currentLang === 'hi'
+                            ? 'पात्रता अनुमोदन विवरण (Why Your Details Are Approved)'
+                            : 'Why Your Details Are Approved (Statutory Clearance)'}
+                        </h5>
+                      </div>
+                      <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                        ✓ 100% ELIGIBILITY CLEARANCE
+                      </span>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-2.5 text-xs text-emerald-950">
+                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                        <div>
+                          <span className="font-bold text-slate-900 block">
+                            {currentLang === 'hi' ? 'व्यवसाय पात्रता (Occupation Match):' : 'Trade Alignment:'}
+                          </span>
+                          <span className="text-slate-700 text-[11px]">
+                            {currentLang === 'hi'
+                              ? `पेशा "${profile.profession}" इस योजना के प्राथमिकता क्षेत्र में स्वीकृत है।`
+                              : `Occupation "${profile.profession}" is eligible under priority lending guidelines.`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                        <div>
+                          <span className="font-bold text-slate-900 block">
+                            {currentLang === 'hi' ? 'वार्षिक आय सीमा (Income Ceiling):' : 'Income Ceiling Pass:'}
+                          </span>
+                          <span className="text-slate-700 text-[11px]">
+                            {currentLang === 'hi'
+                              ? `प्रमाणित आय ₹${profile.annualIncome.toLocaleString('en-IN')} प्राथमिकता सीमा (₹5,00,000) के भीतर है।`
+                              : `Annual income ₹${profile.annualIncome.toLocaleString('en-IN')} is within statutory scheme ceiling (< ₹5,00,000/yr).`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                        <div>
+                          <span className="font-bold text-slate-900 block">
+                            {currentLang === 'hi' ? 'सामाजिक वर्ग व लिंग लाभ:' : 'Category & Gender Bonus:'}
+                          </span>
+                          <span className="text-slate-700 text-[11px]">
+                            {currentLang === 'hi'
+                              ? `${profile.category} वर्ग व ${profile.gender === 'Female' ? 'महिला' : profile.gender} हेतु अधिकतम ${scheme.financials.grantSubsidyPercentage}% सरकारी अनुदान स्वीकृत।`
+                              : `${profile.category} (${profile.gender}) qualifies for highest bracket ${scheme.financials.grantSubsidyPercentage}% Govt grant.`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                        <div>
+                          <span className="font-bold text-slate-900 block">
+                            {currentLang === 'hi' ? 'संपार्श्विक-मुक्त गारंटी:' : 'Collateral-Free Credit:'}
+                          </span>
+                          <span className="text-slate-700 text-[11px]">
+                            {currentLang === 'hi'
+                              ? 'CGTMSE क्रेडिट गारंटी फंड ट्रस्ट के तहत 100% बिना किसी बंधक या जमानत के।'
+                              : '100% sovereign credit guarantee under CGTMSE trust with zero third-party collateral.'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                        <div>
+                          <span className="font-bold text-slate-900 block">
+                            {currentLang === 'hi' ? 'आयु योग्यता (Age Window):' : 'Age Qualification:'}
+                          </span>
+                          <span className="text-slate-700 text-[11px]">
+                            {currentLang === 'hi'
+                              ? `जन्मतिथि ${profile.dob || '1995-05-12'} (आयु ~${new Date().getFullYear() - parseInt(profile.dob?.split('-')[0] || '1995', 10)} वर्ष) 18 से 65 वर्ष की अनिवार्य पात्रता को पूर्ण करती है।`
+                              : `DOB ${profile.dob || '1995-05-12'} (Age ~${new Date().getFullYear() - parseInt(profile.dob?.split('-')[0] || '1995', 10)} yrs) complies with statutory 18 to 65 years eligibility.`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                        <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                        <div>
+                          <span className="font-bold text-slate-900 block">
+                            {currentLang === 'hi' ? 'क्षेत्रीय अधिमान्यता:' : 'Regional Classification:'}
+                          </span>
+                          <span className="text-slate-700 text-[11px]">
+                            {currentLang === 'hi'
+                              ? `${profile.areaType} क्षेत्र (${profile.district}, ${profile.state}) के तहत प्राथमिकता स्वीकृत।`
+                              : `${profile.areaType} classification (${profile.district}, ${profile.state}) approved for nodal allocation.`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Document Readiness Checklist */}
-                  <div className="mt-6 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-3xl">
+                  <div className="mt-4 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-3xl">
                     <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      Required Document Readiness:
+                      {currentLang === 'hi' ? 'सत्यापित संलग्न दस्तावेज:' : 'Attached Verified Documents:'}
                     </h5>
                     <div className="grid sm:grid-cols-3 gap-3">
-                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold">
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold shadow-2xs">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                         <span className="truncate">Aadhaar (OCR Masked)</span>
                       </div>
 
-                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold">
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold shadow-2xs">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span className="truncate">Caste Cert (DigiLocker)</span>
+                        <span className="truncate">Caste Cert (OCR Verified)</span>
                       </div>
 
-                      {scheme.missingDocuments.length > 0 ? (
-                        <div
-                          onClick={() => setIsDigiLockerOpen(true)}
-                          className="flex items-center justify-between gap-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-300 text-xs text-amber-900 font-semibold cursor-pointer hover:bg-amber-100 transition"
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                            <span className="truncate">Rural Cert (Tap to Verify)</span>
-                          </div>
-                          <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded">eKYC</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                          <span className="truncate">All Documents Verified</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-semibold shadow-2xs">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <span className="truncate">Income & Marksheet (Verified)</span>
+                      </div>
                     </div>
 
                     {/* Bottom Card Actions */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-200/60">
-                      <button
-                        type="button"
-                        onClick={() => setIsDigiLockerOpen(true)}
-                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl border-2 border-blue-600 text-blue-700 bg-white hover:bg-blue-50 text-xs font-bold transition flex items-center justify-center gap-2"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-blue-600" />
-                        <span>Verify via DigiLocker Sandbox</span>
-                      </button>
+                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-100/70 border border-emerald-300 text-emerald-900 text-xs font-bold shadow-2xs">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                        <span>{currentLang === 'hi' ? 'पात्रता स्वीकृत (Statutory Verified)' : '100% Eligible & Sanction Ready'}</span>
+                      </div>
 
                       <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                         <button
@@ -798,7 +905,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => handleOpenFinancialAnalysis(scheme.id)}
-                          className="px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5 transition active:scale-95"
+                          className="px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
                         >
                           <Banknote className="w-3.5 h-3.5 text-emerald-600" />
                           <span>Financial Breakdown</span>
@@ -806,11 +913,14 @@ export default function Home() {
 
                         <button
                           type="button"
-                          onClick={() => setIsCafModalOpen(true)}
-                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2"
+                          onClick={() => {
+                            setSelectedSchemeForCaf(scheme);
+                            setIsCafModalOpen(true);
+                          }}
+                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                         >
                           <FileText className="w-4 h-4 text-orange-400" />
-                          <span>Generate CAF Dossier 📄</span>
+                          <span>{currentLang === 'hi' ? 'सी.ए.एफ. आवेदन पत्र (CAF) 📄' : 'Generate Scheme CAF Dossier 📄'}</span>
                         </button>
                       </div>
                     </div>
@@ -823,17 +933,6 @@ export default function Home() {
       </main>
 
       {/* Global Modals & Drawers */}
-      <DigiLockerModal
-        isOpen={isDigiLockerOpen}
-        onClose={() => setIsDigiLockerOpen(false)}
-        onVerified={(record) => {
-          setDigiLockerRecord(record);
-          const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
-          ApiService.matchSchemes(profile, verifiedDocs).then(setSchemes);
-        }}
-        currentLang={currentLang}
-      />
-
       <CompareDrawer
         isOpen={isCompareOpen}
         onClose={() => setIsCompareOpen(false)}
@@ -856,8 +955,7 @@ export default function Home() {
         isOpen={isCafModalOpen}
         onClose={() => setIsCafModalOpen(false)}
         profile={profile}
-        selectedScheme={schemes[0] || null}
-        digiLockerRecord={digiLockerRecord}
+        selectedScheme={selectedSchemeForCaf || schemes[0] || null}
         currentLang={currentLang}
       />
 

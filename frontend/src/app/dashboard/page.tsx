@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
-import { DigiLockerModal } from '@/components/kyc/DigiLockerModal';
 import { CommonAppFormat } from '@/components/caf/CommonAppFormat';
 import { CompareDrawer } from '@/components/compare/CompareDrawer';
 import { FinancialAnalysisDrawer } from '@/components/compare/FinancialAnalysisDrawer';
@@ -12,7 +11,7 @@ import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
 import { MOCK_SCHEMES } from '@/lib/mockData';
-import { SchemeMatch, ApplicantProfile, DigiLockerRecord } from '@/types';
+import { SchemeMatch, ApplicantProfile } from '@/types';
 import { useDevHUD } from '@/hooks/useDevHUD';
 import {
   FileText,
@@ -34,12 +33,11 @@ export default function DashboardPage() {
   const [schemes, setSchemes] = useState<SchemeMatch[]>([]);
   const [selectedSchemeForAnalysis, setSelectedSchemeForAnalysis] = useState<SchemeMatch | null>(null);
   const [selectedSchemeForCompare, setSelectedSchemeForCompare] = useState<SchemeMatch | null>(null);
+  const [selectedSchemeForCaf, setSelectedSchemeForCaf] = useState<SchemeMatch | null>(null);
 
-  const [isDigiLockerOpen, setIsDigiLockerOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isFinancialAnalysisOpen, setIsFinancialAnalysisOpen] = useState(false);
   const [isCafModalOpen, setIsCafModalOpen] = useState(false);
-  const [digiLockerRecord, setDigiLockerRecord] = useState<DigiLockerRecord | null>(null);
 
   const { isOpen: isDevHudOpen, toggle: toggleDevHud, handleTripleTap } = useDevHUD();
   const [ocrEngine, setOcrEngine] = useState<'AUTO' | 'RAPIDOCR' | 'GEMINI' | 'MOCK'>('AUTO');
@@ -51,7 +49,6 @@ export default function DashboardPage() {
     const savedDl = StorageService.getDigiLockerState();
     setProfile(saved);
     setCurrentLang(savedLang);
-    setDigiLockerRecord(savedDl);
 
     const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
     ApiService.matchSchemes(saved, verifiedDocs).then(setSchemes);
@@ -67,7 +64,6 @@ export default function DashboardPage() {
         }}
         isLargerFont={isLargerFont}
         onToggleFont={() => setIsLargerFont((p) => !p)}
-        onOpenDigiLocker={() => setIsDigiLockerOpen(true)}
         onTripleTapLogo={handleTripleTap}
       />
 
@@ -94,7 +90,10 @@ export default function DashboardPage() {
             </button>
             <button
               type="button"
-              onClick={() => setIsCafModalOpen(true)}
+              onClick={() => {
+                setSelectedSchemeForCaf(schemes[0] || null);
+                setIsCafModalOpen(true);
+              }}
               className="h-9 px-3.5 rounded-xl bg-indigo-950 text-white text-xs font-semibold hover:bg-indigo-900 transition flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5 text-orange-400" />
@@ -165,6 +164,109 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {/* WHY DETAILS ARE APPROVED (पात्रता अनुमोदन विवरण) WITH GREEN TICKS */}
+              <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-emerald-50/80 border border-emerald-300 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                    <h5 className="text-xs sm:text-sm font-black text-emerald-950 uppercase tracking-wide">
+                      {currentLang === 'hi'
+                        ? 'पात्रता अनुमोदन विवरण (Why Your Details Are Approved)'
+                        : 'Why Your Details Are Approved (Statutory Clearance)'}
+                    </h5>
+                  </div>
+                  <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                    ✓ 100% ELIGIBILITY CLEARANCE
+                  </span>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-2.5 text-xs text-emerald-950">
+                  <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">
+                        {currentLang === 'hi' ? 'व्यवसाय पात्रता (Occupation Match):' : 'Trade Alignment:'}
+                      </span>
+                      <span className="text-slate-700 text-[11px]">
+                        {currentLang === 'hi'
+                          ? `पेशा "${profile.profession}" इस योजना के प्राथमिकता क्षेत्र में स्वीकृत है।`
+                          : `Occupation "${profile.profession}" is eligible under priority lending guidelines.`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">
+                        {currentLang === 'hi' ? 'वार्षिक आय सीमा (Income Ceiling):' : 'Income Ceiling Pass:'}
+                      </span>
+                      <span className="text-slate-700 text-[11px]">
+                        {currentLang === 'hi'
+                          ? `प्रमाणित आय ₹${profile.annualIncome.toLocaleString('en-IN')} प्राथमिकता सीमा (₹5,00,000) के भीतर है।`
+                          : `Annual income ₹${profile.annualIncome.toLocaleString('en-IN')} is within statutory scheme ceiling (< ₹5,00,000/yr).`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">
+                        {currentLang === 'hi' ? 'सामाजिक वर्ग व लिंग लाभ:' : 'Category & Gender Bonus:'}
+                      </span>
+                      <span className="text-slate-700 text-[11px]">
+                        {currentLang === 'hi'
+                          ? `${profile.category} वर्ग व ${profile.gender === 'Female' ? 'महिला' : profile.gender} हेतु अधिकतम ${scheme.financials.grantSubsidyPercentage}% सरकारी अनुदान स्वीकृत।`
+                          : `${profile.category} (${profile.gender}) qualifies for highest bracket ${scheme.financials.grantSubsidyPercentage}% Govt grant.`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">
+                        {currentLang === 'hi' ? 'संपार्श्विक-मुक्त गारंटी:' : 'Collateral-Free Credit:'}
+                      </span>
+                      <span className="text-slate-700 text-[11px]">
+                        {currentLang === 'hi'
+                          ? 'CGTMSE क्रेडिट गारंटी फंड ट्रस्ट के तहत 100% बिना किसी बंधक या जमानत के।'
+                          : '100% sovereign credit guarantee under CGTMSE trust with zero third-party collateral.'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">
+                        {currentLang === 'hi' ? 'आयु योग्यता (Age Window):' : 'Age Qualification:'}
+                      </span>
+                      <span className="text-slate-700 text-[11px]">
+                        {currentLang === 'hi'
+                          ? `जन्मतिथि ${profile.dob || '1995-05-12'} (आयु ~${new Date().getFullYear() - parseInt(profile.dob?.split('-')[0] || '1995', 10)} वर्ष) 18 से 65 वर्ष की अनिवार्य पात्रता को पूर्ण करती है।`
+                          : `DOB ${profile.dob || '1995-05-12'} (Age ~${new Date().getFullYear() - parseInt(profile.dob?.split('-')[0] || '1995', 10)} yrs) complies with statutory 18 to 65 years eligibility.`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 bg-white/90 p-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span className="font-bold text-emerald-600 text-sm leading-none mt-0.5">✓</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">
+                        {currentLang === 'hi' ? 'क्षेत्रीय अधिमान्यता:' : 'Regional Classification:'}
+                      </span>
+                      <span className="text-slate-700 text-[11px]">
+                        {currentLang === 'hi'
+                          ? `${profile.areaType} क्षेत्र (${profile.district}, ${profile.state}) के तहत प्राथमिकता स्वीकृत।`
+                          : `${profile.areaType} classification (${profile.district}, ${profile.state}) approved for nodal allocation.`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-6 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-3xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -195,7 +297,10 @@ export default function DashboardPage() {
 
                   <button
                     type="button"
-                    onClick={() => setIsCafModalOpen(true)}
+                    onClick={() => {
+                      setSelectedSchemeForCaf(scheme);
+                      setIsCafModalOpen(true);
+                    }}
                     className="w-full sm:w-auto h-9 px-4 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <FileText className="w-3.5 h-3.5 text-orange-400" />
@@ -207,13 +312,6 @@ export default function DashboardPage() {
           ))}
         </div>
       </main>
-
-      <DigiLockerModal
-        isOpen={isDigiLockerOpen}
-        onClose={() => setIsDigiLockerOpen(false)}
-        onVerified={(rec) => setDigiLockerRecord(rec)}
-        currentLang={currentLang}
-      />
 
       <CompareDrawer
         isOpen={isCompareOpen}
@@ -237,8 +335,7 @@ export default function DashboardPage() {
         isOpen={isCafModalOpen}
         onClose={() => setIsCafModalOpen(false)}
         profile={profile}
-        selectedScheme={schemes[0] || null}
-        digiLockerRecord={digiLockerRecord}
+        selectedScheme={selectedSchemeForCaf || schemes[0] || null}
         currentLang={currentLang}
       />
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, PenSquare, ArrowRight, SlidersHorizontal, SearchX } from 'lucide-react';
+import { ShieldCheck, PenSquare, ArrowRight, SlidersHorizontal, SearchX, FileText } from 'lucide-react';
 import { SchemeMatch } from '@/types';
 
 interface BaselineMatchPreviewProps {
@@ -13,6 +13,7 @@ interface BaselineMatchPreviewProps {
   onOpenCompare?: (scheme: SchemeMatch) => void;
   onOpenFinancialAnalysis?: (schemeId: string) => void;
   onSwitchToPathway2?: () => void;
+  onOpenCaf?: (scheme: SchemeMatch) => void;
 }
 
 export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
@@ -23,6 +24,7 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
   onOpenCompare,
   onOpenFinancialAnalysis,
   onSwitchToPathway2,
+  onOpenCaf,
 }) => {
   const topSchemes = schemes.slice(0, 2);
 
@@ -112,6 +114,19 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
                 </span>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Download CAF Button */}
+                  {onOpenCaf && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCaf(scheme)}
+                      className="h-8 px-2.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-100/80 hover:bg-emerald-200 border border-emerald-300 transition flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
+                      title={currentLang === 'hi' ? 'योजना का आवेदन पत्र डाउनलोड करें' : 'Download Application Form'}
+                    >
+                      <FileText className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>{currentLang === 'hi' ? 'आवेदन पत्र' : 'Form (CAF)'}</span>
+                    </button>
+                  )}
+
                   {/* Compare Button */}
                   {onOpenCompare && (
                     <button

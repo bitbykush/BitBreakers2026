@@ -34,6 +34,9 @@ export interface DocumentRecord {
   verificationSource?: 'RAPIDOCR' | 'GEMINI' | 'DIGILOCKER' | 'MANUAL';
   referenceId?: string;
   verifiedAt?: string;
+  fileDataUrl?: string;
+  fileName?: string;
+  fileSize?: string;
 }
 
 export interface SchemeFinancials {

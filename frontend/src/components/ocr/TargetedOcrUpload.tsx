@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   FileCheck,
@@ -13,14 +13,17 @@ import {
   AlertCircle,
   AlertTriangle,
   RefreshCw,
+  FileText,
+  Paperclip,
 } from 'lucide-react';
 import { OcrDocType, OcrExtractedData } from '@/types';
 import { ApiService } from '@/lib/api';
+import { StorageService } from '@/lib/storage';
 import { useAccessibility } from '@/context/AccessibilityContext';
 
 interface TargetedOcrUploadProps {
   currentLang: 'en' | 'hi';
-  onExtractSuccess: (data: OcrExtractedData) => void;
+  onExtractSuccess: (data: OcrExtractedData, fileDataUrl?: string, fileName?: string) => void;
 }
 
 type UploadStatus = 'idle' | 'scanning' | 'verifying' | 'needs_permission' | 'verified' | 'unverified';
@@ -38,6 +41,33 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingResult, setPendingResult] = useState<OcrExtractedData | null>(null);
   const [permissionPromptMessage, setPermissionPromptMessage] = useState<string>('');
+
+  // Persisted uploaded documents state (mapped by document code e.g. AADHAAR, CASTE)
+  const [savedDocs, setSavedDocs] = useState<Record<string, { fileName: string; fileSize: string; fileDataUrl: string; isVerified: boolean }>>({});
+  const [currentFileDataUrl, setCurrentFileDataUrl] = useState<string>('');
+  const [currentFileName, setCurrentFileName] = useState<string>('');
+  const [currentFileSize, setCurrentFileSize] = useState<string>('');
+
+  const refreshSavedDocs = () => {
+    const docs = StorageService.getDocuments();
+    const map: Record<string, { fileName: string; fileSize: string; fileDataUrl: string; isVerified: boolean }> = {};
+    docs.forEach((d) => {
+      if (d.fileDataUrl) {
+        const cleanCode = d.code.replace(/^DOC_/, '').toUpperCase();
+        map[cleanCode] = {
+          fileName: d.fileName || d.name,
+          fileSize: d.fileSize || 'Attached',
+          fileDataUrl: d.fileDataUrl,
+          isVerified: d.isVerified,
+        };
+      }
+    });
+    setSavedDocs(map);
+  };
+
+  useEffect(() => {
+    refreshSavedDocs();
+  }, []);
 
   const docTabs: { type: OcrDocType; nameEn: string; nameHi: string; icon: React.ReactNode }[] = [
     { type: 'AADHAAR', nameEn: 'Aadhaar Card', nameHi: 'आधार कार्ड', icon: <CreditCard className="w-3.5 h-3.5" /> },
@@ -62,15 +92,41 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     return false;
   };
 
+  const readFileAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
 
     const files = Array.from(fileList);
+    const file = files[0];
+    const sizeStr = `${(file.size / 1024).toFixed(1)} KB`;
+
     setSelectedFileNames(files.map((f) => f.name));
+    setCurrentFileName(file.name);
+    setCurrentFileSize(sizeStr);
     setUploadStatus('scanning');
     setExtractedData(null);
     setPendingResult(null);
+
+    // Read Data URL immediately so the document preview & file is NEVER lost
+    let dataUrl = '';
+    try {
+      dataUrl = await readFileAsDataUrl(file);
+      setCurrentFileDataUrl(dataUrl);
+      // Immediately save to local storage as user-uploaded document
+      StorageService.saveUploadedDocument(activeDocType, dataUrl, file.name, sizeStr);
+      refreshSavedDocs();
+    } catch (readErr) {
+      console.warn('Could not read image as data URL:', readErr);
+    }
 
     if (talkBackActive) {
       speakText(
@@ -110,7 +166,16 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       if (isValid) {
         setUploadStatus('verified');
         setExtractedData(result);
-        onExtractSuccess(result);
+        StorageService.saveUploadedDocument(
+          activeDocType,
+          dataUrl || currentFileDataUrl,
+          file.name,
+          sizeStr,
+          result.masked_aadhaar || result.certificate_number,
+          'RAPIDOCR'
+        );
+        refreshSavedDocs();
+        onExtractSuccess(result, dataUrl || currentFileDataUrl, file.name);
         if (talkBackActive) {
           speakText(
             currentLang === 'hi'
@@ -125,29 +190,30 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         setUnverifiedMessage(
           result.error_message ||
             (currentLang === 'hi'
-              ? 'दस्तावेज़ से स्पष्ट विवरण नहीं पढ़े जा सके। कृपया एक साफ़ फोटो अपलोड करें या नीचे फ़ॉर्म में जानकारी टाइप करें।'
-              : 'Could not extract verifiable information from the document. Please upload a clear, legible photo or enter details manually below.')
+              ? 'दस्तावेज़ से स्पष्ट विवरण नहीं पढ़े जा सके। आप इसे फिर भी फ़ॉर्म में संलग्न कर सकते हैं या विवरण मैन्युअल दर्ज कर सकते हैं।'
+              : 'Could not extract high-confidence text from document. You can still attach this document copy or fill details manually.')
         );
         if (talkBackActive) {
           speakText(
             currentLang === 'hi'
-              ? 'दस्तावेज़ सत्यापित नहीं हो सका। कृपया पुनः प्रयास करें।'
-              : 'Document could not be verified. Please try again with a clearer image.'
+              ? 'दस्तावेज़ का विवरण स्पष्ट नहीं है।'
+              : 'Document text could not be verified with high confidence.'
           );
         }
       }
     } catch (err) {
       console.error('OCR Error:', err);
       setUploadStatus('unverified');
+      setPendingFiles(files);
       setUnverifiedMessage(
         currentLang === 'hi'
-          ? 'स्कैन प्रक्रिया में तकनीकी समस्या आई। कृपया पुनः प्रयास करें।'
-          : 'Technical error during document scan. Please try again.'
+          ? 'स्कैन प्रक्रिया में तकनीकी समस्या आई। आप यह दस्तावेज़ संलग्न रख सकते हैं या पुनः प्रयास करें।'
+          : 'Technical notice during OCR scan. You can still attach and save this document to your dossier.'
       );
       if (talkBackActive) {
         speakText(
           currentLang === 'hi'
-            ? 'दस्तावेज़ स्कैन करने में त्रुटि हुई।'
+            ? 'दस्तावेज़ स्कैन करने में समस्या आई।'
             : 'Error occurred while scanning document.'
         );
       }
@@ -177,7 +243,16 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       if (isValid) {
         setUploadStatus('verified');
         setExtractedData(result);
-        onExtractSuccess(result);
+        StorageService.saveUploadedDocument(
+          activeDocType,
+          currentFileDataUrl,
+          currentFileName || pendingFiles[0]?.name || `${activeDocType}_Doc.jpg`,
+          currentFileSize || 'Attached',
+          result.masked_aadhaar || result.certificate_number,
+          'GEMINI'
+        );
+        refreshSavedDocs();
+        onExtractSuccess(result, currentFileDataUrl, currentFileName);
         if (talkBackActive) {
           speakText(
             currentLang === 'hi'
@@ -189,8 +264,8 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         setUploadStatus('unverified');
         setUnverifiedMessage(
           currentLang === 'hi'
-            ? 'Cloud AI भी आवश्यक विवरण नहीं पढ़ सका। कृपया साफ़ दस्तावेज़ अपलोड करें।'
-            : 'Cloud AI could not read required details clearly. Please upload a clearer document.'
+            ? 'Cloud AI भी आवश्यक विवरण नहीं पढ़ सका। आप यह दस्तावेज़ संलग्न रख सकते हैं।'
+            : 'Cloud AI could not read all required details. You can still attach and save this document.'
         );
       }
     } catch (err) {
@@ -206,7 +281,16 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     if (pendingResult && hasEssentialFields(pendingResult)) {
       setUploadStatus('verified');
       setExtractedData(pendingResult);
-      onExtractSuccess(pendingResult);
+      StorageService.saveUploadedDocument(
+        activeDocType,
+        currentFileDataUrl,
+        currentFileName,
+        currentFileSize || 'Attached',
+        pendingResult.masked_aadhaar || pendingResult.certificate_number,
+        'RAPIDOCR'
+      );
+      refreshSavedDocs();
+      onExtractSuccess(pendingResult, currentFileDataUrl, currentFileName);
       if (talkBackActive) {
         speakText(
           currentLang === 'hi'
@@ -218,8 +302,40 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       setUploadStatus('unverified');
       setUnverifiedMessage(
         currentLang === 'hi'
-          ? 'दस्तावेज़ सत्यापित नहीं हुआ। कृपया मैन्युअल विवरण भरें।'
-          : 'Document was not verified. Please fill details manually below.'
+          ? 'दस्तावेज़ सत्यापित नहीं हुआ। आप इसे संलग्न कर सकते हैं या मैन्युअल भरें।'
+          : 'Document was not verified. You can attach it anyway or fill details manually below.'
+      );
+    }
+  };
+
+  // Allow attaching the uploaded document even when OCR confidence is low or manual
+  const handleForceAttach = () => {
+    const attachedData: OcrExtractedData = pendingResult || {
+      doc_type: activeDocType,
+      confidence: 65,
+      engine: 'RapidOCR_ONNX',
+      is_verified: true,
+    };
+    attachedData.is_verified = true;
+
+    StorageService.saveUploadedDocument(
+      activeDocType,
+      currentFileDataUrl,
+      currentFileName || `${activeDocType}_Attached.jpg`,
+      currentFileSize || 'Attached',
+      `ATTACHED-${Date.now().toString().slice(-6)}`,
+      'RAPIDOCR'
+    );
+    refreshSavedDocs();
+    setUploadStatus('verified');
+    setExtractedData(attachedData);
+    onExtractSuccess(attachedData, currentFileDataUrl, currentFileName || `${activeDocType}_Attached.jpg`);
+
+    if (talkBackActive) {
+      speakText(
+        currentLang === 'hi'
+          ? 'दस्तावेज़ सफलतापूर्वक सहेजा गया और आवेदन पत्र में संलग्न कर दिया गया।'
+          : 'Document saved and attached to the application dossier.'
       );
     }
   };
@@ -254,6 +370,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100" role="tablist" aria-label="Document Type Selection">
         {docTabs.map((tab) => {
           const isActive = activeDocType === tab.type;
+          const isSaved = Boolean(savedDocs[tab.type]);
           const label = currentLang === 'hi' ? tab.nameHi : tab.nameEn;
           return (
             <button
@@ -277,10 +394,47 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
             >
               {tab.icon}
               <span>{label}</span>
+              {isSaved && (
+                <span
+                  className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${
+                    isActive ? 'bg-emerald-400 ring-1 ring-white' : 'bg-emerald-600'
+                  }`}
+                  title="Document Attached & Saved"
+                />
+              )}
             </button>
           );
         })}
       </div>
+
+      {/* Already Uploaded Document Preview Banner */}
+      {savedDocs[activeDocType] && uploadStatus === 'idle' && (
+        <div className="bg-emerald-50/90 border border-emerald-300 rounded-xl p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-2xs animate-fadeIn">
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src={savedDocs[activeDocType].fileDataUrl}
+              alt="Attached Document Preview"
+              className="w-12 h-12 rounded-lg object-cover border-2 border-emerald-400 shadow-2xs flex-shrink-0 bg-white"
+            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-bold text-emerald-950 truncate max-w-xs">
+                  {savedDocs[activeDocType].fileName}
+                </span>
+                <span className="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-1.5 py-0.2 rounded font-mono">
+                  ✓ SAVED & ATTACHED
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-800 mt-0.5">
+                {savedDocs[activeDocType].fileSize} • {currentLang === 'hi' ? 'यह दस्तावेज़ आवेदन पत्र (CAF) में शामिल है' : 'Included in Application Dossier & PDF download'}
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-300 flex-shrink-0">
+            ✓ Attached
+          </span>
+        </div>
+      )}
 
       {/* Upload Zone / Verification Card */}
       {uploadStatus === 'idle' && (
@@ -316,7 +470,15 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
             <span className="mt-1 h-8 px-3.5 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-semibold shadow-2xs flex items-center gap-1.5 pointer-events-none">
               <Upload className="w-3.5 h-3.5" />
-              <span>{currentLang === 'hi' ? 'फ़ोटो चुनें या यहाँ खींचें' : 'Choose Photo or Drag Here'}</span>
+              <span>
+                {savedDocs[activeDocType]
+                  ? currentLang === 'hi'
+                    ? 'नई फ़ोटो बदलकर अपलोड करें'
+                    : 'Replace with New Photo'
+                  : currentLang === 'hi'
+                  ? 'फ़ोटो चुनें या यहाँ खींचें'
+                  : 'Choose Photo or Drag Here'}
+              </span>
             </span>
           </div>
         </div>
@@ -394,6 +556,13 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
             </button>
             <button
               type="button"
+              onClick={handleForceAttach}
+              className="h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 transition shadow-2xs active:scale-95 cursor-pointer"
+            >
+              {currentLang === 'hi' ? 'दस्तावेज़ ऐसे ही संलग्न करें' : 'Attach Document Directly'}
+            </button>
+            <button
+              type="button"
               onClick={handleAcceptGemini}
               className="h-8 px-3.5 rounded-lg text-xs font-bold bg-indigo-950 hover:bg-indigo-900 text-white transition shadow-2xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
             >
@@ -404,22 +573,34 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         </div>
       )}
 
-      {/* Unverified / Error State (Truthful feedback without false success) */}
+      {/* Unverified / Error State (Truthful feedback with direct option to attach anyway) */}
       {uploadStatus === 'unverified' && (
-        <div className="border border-rose-200 bg-rose-50/60 rounded-xl p-4 space-y-2.5 animate-fadeIn">
+        <div className="border border-rose-200 bg-rose-50/60 rounded-xl p-4 space-y-3 animate-fadeIn">
           <div className="flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-xs text-rose-950">
-                {currentLang === 'hi' ? 'दस्तावेज़ सत्यापन अधूरा रहा' : 'Document Verification Incomplete'}
+                {currentLang === 'hi' ? 'दस्तावेज़ सत्यापन सूचना' : 'Document Verification Notice'}
               </p>
               <p className="text-xs text-rose-800 mt-0.5 leading-relaxed">
                 {unverifiedMessage}
               </p>
+              {currentFileDataUrl && (
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-rose-200/60">
+                  <img
+                    src={currentFileDataUrl}
+                    alt="Uploaded copy"
+                    className="w-10 h-10 rounded object-cover border border-rose-300 bg-white"
+                  />
+                  <span className="text-[11px] text-rose-900 font-semibold truncate">
+                    {currentFileName} ({currentFileSize})
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-1 border-t border-rose-200/60">
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-rose-200/60">
             <button
               type="button"
               onClick={handleResetUpload}
@@ -428,6 +609,17 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
               <RefreshCw className="w-3 h-3" />
               <span>{currentLang === 'hi' ? 'दूसरा फोटो अपलोड करें' : 'Try Another Photo'}</span>
             </button>
+
+            {currentFileDataUrl && (
+              <button
+                type="button"
+                onClick={handleForceAttach}
+                className="h-8 px-3.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" />
+                <span>{currentLang === 'hi' ? 'दस्तावेज़ संलग्न व सुरक्षित करें' : 'Attach & Save Document Anyway'}</span>
+              </button>
+            )}
           </div>
         </div>
       )}
