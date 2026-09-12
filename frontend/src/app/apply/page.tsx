@@ -192,20 +192,6 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Academic Marks / Percentage (%)</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="100"
-                placeholder="e.g. 89.0 (Auto-filled from Marksheet)"
-                value={profile.marksPercentage !== undefined && profile.marksPercentage !== null ? profile.marksPercentage : ''}
-                onChange={(e) => handleFormChange('marksPercentage', e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Trade (लक्षित व्यवसाय / पेशा)</label>
               <input
                 type="text"

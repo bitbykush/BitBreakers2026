@@ -239,41 +239,6 @@ def clean_human_name(candidate_line: str) -> Optional[str]:
     return None
 
 
-WORD_NUMBERS = {
-    "ZERO": 0, "ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5,
-    "SIX": 6, "SEVEN": 7, "EIGHT": 8, "NINE": 9, "TEN": 10,
-    "ELEVEN": 11, "TWELVE": 12, "THIRTEEN": 13, "FOURTEEN": 14, "FIFTEEN": 15,
-    "SIXTEEN": 16, "SEVENTEEN": 17, "EIGHTEEN": 18, "NINETEEN": 19,
-    "TWENTY": 20, "THIRTY": 30, "FORTY": 40, "FIFTY": 50,
-    "SIXTY": 60, "SEVENTY": 70, "EIGHTY": 80, "NINETY": 90, "HUNDRED": 100
-}
-
-
-def parse_words_to_number(text: str) -> Optional[int]:
-    """Parses joined or spaced words like 'EIGHTYTWO', 'EIGHTY TWO', 'NINETYFIVE' into integers."""
-    t = text.upper().replace("-", " ").strip()
-    for tens_word, tens_val in [
-        ("NINETY", 90), ("EIGHTY", 80), ("SEVENTY", 70), ("SIXTY", 60),
-        ("FIFTY", 50), ("FORTY", 40), ("THIRTY", 30), ("TWENTY", 20)
-    ]:
-        if t.startswith(tens_word):
-            rest = t[len(tens_word):].strip()
-            if not rest:
-                return tens_val
-            for unit_word, unit_val in [
-                ("ONE", 1), ("TWO", 2), ("THREE", 3), ("FOUR", 4), ("FIVE", 5),
-                ("SIX", 6), ("SEVEN", 7), ("EIGHT", 8), ("NINE", 9)
-            ]:
-                if rest == unit_word:
-                    return tens_val + unit_val
-    if t in ["HUNDRED", "ONE HUNDRED"]:
-        return 100
-    for w, v in WORD_NUMBERS.items():
-        if t == w:
-            return v
-    return None
-
-
 def classify_education_level(text: str) -> Optional[str]:
     """
     Classifies academic qualification across CBSE, ICSE, State Boards, Polytechnic, and Universities.
@@ -608,56 +573,6 @@ class TargetedDocumentExtractor:
                     data["marks_percentage"] = float(pct_label_match.group(1))
                 except ValueError:
                     pass
-
-        # Strategy C: CGPA to Percentage (UGC/CBSE conversion: CGPA * 9.5)
-        if not data["marks_percentage"]:
-            cgpa_match = re.search(r'\b(?:CGPA|GPA)[:\s]*([4-9](?:\.[0-9]{1,2})?|10(?:\.0)?)\b', full_text, re.IGNORECASE)
-            if cgpa_match:
-                try:
-                    cgpa_val = float(cgpa_match.group(1))
-                    data["marks_percentage"] = round(cgpa_val * 9.5, 1)
-                except ValueError:
-                    pass
-
-        # Strategy D: Total Marks / Maximum Marks ratio (e.g. 429/500)
-        if not data["marks_percentage"]:
-            ratio_match = re.search(r'(?:TOTAL|GRAND TOTAL|AGGREGATE|प्राप्तांक)[:\s]*([0-9]{3})\s*(?:/|OUT OF)\s*([0-9]{3})', full_text, re.IGNORECASE)
-            if ratio_match:
-                try:
-                    obtained = float(ratio_match.group(1))
-                    maximum = float(ratio_match.group(2))
-                    if 0 < obtained <= maximum:
-                        data["marks_percentage"] = round((obtained / maximum) * 100.0, 1)
-                except ValueError:
-                    pass
-
-        # Strategy E: Tabular Subject Marks in Words (CBSE / State Boards)
-        if not data["marks_percentage"]:
-            found_word_marks = []
-            for line in text_lines:
-                matches = re.findall(r'\b((?:NINETY|EIGHTY|SEVENTY|SIXTY|FIFTY|FORTY|THIRTY|TWENTY)\s*(?:ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE)?)\b', line.upper())
-                for m in matches:
-                    val = parse_words_to_number(m)
-                    if val and 33 <= val <= 100:
-                        found_word_marks.append(val)
-            if len(found_word_marks) >= 4:
-                top5 = sorted(found_word_marks, reverse=True)[:5]
-                data["marks_percentage"] = round(sum(top5) / len(top5), 1)
-
-        # Strategy F: Tabular Subject Marks in Digits (last numeric token in subject lines)
-        if not data["marks_percentage"]:
-            candidate_subject_marks = []
-            for line in text_lines:
-                # Check for lines with subject codes or marks: contains 2-3 numbers
-                nums = [int(n) for n in re.findall(r'\b([0-9]{2,3})\b', line)]
-                # Filter marks between 33 and 100
-                subject_scores = [n for n in nums if 33 <= n <= 100]
-                if subject_scores:
-                    # On CBSE marksheets, the total is usually the highest or last score in the row
-                    candidate_subject_marks.append(max(subject_scores))
-            if len(candidate_subject_marks) >= 5:
-                top5 = sorted(candidate_subject_marks, reverse=True)[:5]
-                data["marks_percentage"] = round(sum(top5) / len(top5), 1)
 
         # 3. Student Name Extraction
         for idx, line in enumerate(text_lines):

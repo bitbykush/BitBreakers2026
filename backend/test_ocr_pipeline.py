@@ -120,11 +120,11 @@ def test_cbse_tabular_marksheet_extractor():
 
     extracted = extractor.extract_marksheet(sample_lines)
     assert extracted["highest_education"] == "10th", f"Expected 10th, got {extracted['highest_education']}"
-    assert extracted["marks_percentage"] == 89.0, f"Expected 89.0, got {extracted['marks_percentage']}"
+    assert extracted["marks_percentage"] is None, f"Expected None (no artificial marks calculation), got {extracted['marks_percentage']}"
     assert extracted["name"] == "Kushagra Kumar Singh", f"Expected 'Kushagra Kumar Singh', got '{extracted['name']}'"
     assert extracted["dob"] == "23/02/2008", f"Expected '23/02/2008', got '{extracted['dob']}'"
     assert extracted["certificate_number"] == "23324939", f"Expected '23324939', got '{extracted['certificate_number']}'"
-    print(f"[PASS] CBSE Tabular Marksheet passed: 10th Class, 89.0% (top 5 average), '{extracted['name']}', DOB {extracted['dob']}, Roll No {extracted['certificate_number']}!")
+    print(f"[PASS] CBSE Tabular Marksheet passed: 10th Class, no marks calculation, '{extracted['name']}', DOB {extracted['dob']}, Roll No {extracted['certificate_number']}!")
 
 
 def test_image_downscaling():
