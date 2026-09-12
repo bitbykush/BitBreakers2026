@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   title: 'Scheme Seva Kendra (योजना सेवा केंद्र) — National Welfare & Subsidy Discovery',
   description:
     'Zero-Login, AI-Driven Welfare & Scholarship Matcher with Common Application Dossier for 63M marginalized micro-entrepreneurs.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/favicon.png',
+  },
 };
 
 export default function RootLayout({

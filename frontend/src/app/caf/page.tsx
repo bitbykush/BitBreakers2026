@@ -6,18 +6,16 @@ import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { MOCK_SCHEMES } from '@/lib/mockData';
-import { ApplicantProfile, SchemeMatch, DigiLockerRecord } from '@/types';
+import { ApplicantProfile, SchemeMatch } from '@/types';
 import { Printer, ArrowLeft } from 'lucide-react';
 
 export default function CafPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<ApplicantProfile>(DEFAULT_PROFILE);
   const [selectedScheme, setSelectedScheme] = useState<SchemeMatch>(MOCK_SCHEMES[0]);
-  const [digiLockerRecord, setDigiLockerRecord] = useState<DigiLockerRecord | null>(null);
 
   useEffect(() => {
     setProfile(StorageService.getProfile());
-    setDigiLockerRecord(StorageService.getDigiLockerState());
   }, []);
 
   const capital = profile.requiredCapital || 200000;
@@ -37,7 +35,6 @@ export default function CafPage() {
           onLangChange={() => {}}
           isLargerFont={false}
           onToggleFont={() => {}}
-          onOpenDigiLocker={() => {}}
         />
       </div>
 
@@ -82,7 +79,7 @@ export default function CafPage() {
 
             <div className="text-right font-mono text-xs">
               <p className="font-bold text-indigo-950">
-                Dossier ID: {digiLockerRecord?.refId ? `CAF-${digiLockerRecord.refId}` : 'CAF-2026-X8921'}
+                Dossier ID: CAF-2026-X8921
               </p>
               <p className="text-slate-500">
                 Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -123,8 +120,8 @@ export default function CafPage() {
                 <tr>
                   <td className="p-2 font-bold bg-slate-50">Education & Course:</td>
                   <td className="p-2 font-semibold">{profile.education} Pass</td>
-                  <td className="p-2 font-bold bg-slate-50">DigiLocker Verification:</td>
-                  <td className="p-2 text-emerald-700 font-mono font-semibold">✓ Verified (DL-2026-X8921)</td>
+                  <td className="p-2 font-bold bg-slate-50">Statutory Verification:</td>
+                  <td className="p-2 text-emerald-700 font-mono font-semibold">✓ Verified (UIDAI & State Revenue)</td>
                 </tr>
               </tbody>
             </table>
@@ -190,7 +187,7 @@ export default function CafPage() {
               </div>
               <div className="border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
                 <span>{profile.category} Caste Certificate</span>
-                <span className="text-emerald-700 font-bold font-mono">✓ PASS (DigiLocker Verified)</span>
+                <span className="text-emerald-700 font-bold font-mono">✓ PASS (State Revenue Board)</span>
               </div>
               <div className="border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
                 <span>Income Certificate Verification</span>

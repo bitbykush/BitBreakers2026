@@ -5,11 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { TargetedOcrUpload } from '@/components/ocr/TargetedOcrUpload';
-import { DigiLockerModal } from '@/components/kyc/DigiLockerModal';
 import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
-import { ApplicantProfile, SocialCategory, Gender, EducationLevel, OcrExtractedData } from '@/types';
+import { ApplicantProfile, SocialCategory, Gender, EducationLevel, OcrExtractedData, DocumentRecord } from '@/types';
 import { useDevHUD } from '@/hooks/useDevHUD';
 import { UserCheck, CheckCircle2, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 
@@ -18,7 +17,6 @@ export default function ApplyPage() {
   const [currentLang, setCurrentLang] = useState<'en' | 'hi'>('en');
   const [isLargerFont, setIsLargerFont] = useState(false);
   const [profile, setProfile] = useState<ApplicantProfile>(DEFAULT_PROFILE);
-  const [isDigiLockerOpen, setIsDigiLockerOpen] = useState(false);
 
   const { isOpen: isDevHudOpen, toggle: toggleDevHud, handleTripleTap } = useDevHUD();
   const [ocrEngine, setOcrEngine] = useState<'AUTO' | 'RAPIDOCR' | 'GEMINI' | 'MOCK'>('AUTO');
@@ -34,7 +32,7 @@ export default function ApplyPage() {
     setProfile(updated);
   };
 
-  const handleOcrExtracted = (extracted: OcrExtractedData) => {
+  const handleOcrExtracted = (extracted: OcrExtractedData, fileDataUrl?: string, fileName?: string) => {
     const patch: Partial<ApplicantProfile> = {};
     if (extracted.name) patch.name = extracted.name;
     if (extracted.dob) patch.dob = extracted.dob;
@@ -50,6 +48,32 @@ export default function ApplyPage() {
 
     const updated = StorageService.saveProfile(patch);
     setProfile(updated);
+
+    const engineSource: DocumentRecord['verificationSource'] =
+      extracted.engine === 'Gemini_1.5_Flash' ? 'GEMINI' : 'RAPIDOCR';
+    const refId = extracted.masked_aadhaar || extracted.certificate_number || `VER-${Date.now().toString().slice(-6)}`;
+
+    // If file image is available, save full uploaded document record
+    if (fileDataUrl && fileName) {
+      StorageService.saveUploadedDocument(
+        extracted.doc_type,
+        fileDataUrl,
+        fileName,
+        'Attached',
+        refId,
+        engineSource
+      );
+    } else {
+      if (extracted.doc_type === 'AADHAAR') {
+        StorageService.verifyDocument('DOC_AADHAAR', engineSource, extracted.masked_aadhaar || 'UIDAI-MASKED');
+      } else if (extracted.doc_type === 'CASTE') {
+        StorageService.verifyDocument('DOC_CASTE', engineSource, extracted.certificate_number || 'CASTE-CERT');
+      } else if (extracted.doc_type === 'INCOME') {
+        StorageService.verifyDocument('DOC_INCOME', engineSource, extracted.certificate_number || 'INC-CERT');
+      } else if (extracted.doc_type === 'MARKSHEET') {
+        StorageService.verifyDocument('DOC_MARKSHEET', engineSource, 'MARKS-VERIFIED');
+      }
+    }
   };
 
   const handleSubmit = () => {
@@ -66,7 +90,6 @@ export default function ApplyPage() {
         }}
         isLargerFont={isLargerFont}
         onToggleFont={() => setIsLargerFont((p) => !p)}
-        onOpenDigiLocker={() => setIsDigiLockerOpen(true)}
         onTripleTapLogo={handleTripleTap}
       />
 
@@ -213,13 +236,6 @@ export default function ApplyPage() {
           </button>
         </div>
       </main>
-
-      <DigiLockerModal
-        isOpen={isDigiLockerOpen}
-        onClose={() => setIsDigiLockerOpen(false)}
-        onVerified={() => {}}
-        currentLang={currentLang}
-      />
 
       <DevDebugDrawer
         isOpen={isDevHudOpen}

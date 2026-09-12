@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, Sparkles, Building2, Accessibility } from 'lucide-react';
+import Image from 'next/image';
+import { ShieldCheck, Sparkles, Accessibility } from 'lucide-react';
 import { StorageService } from '@/lib/storage';
 import { useAccessibility } from '@/context/AccessibilityContext';
 
@@ -10,8 +11,8 @@ interface HeaderProps {
   onLangChange: (lang: 'en' | 'hi') => void;
   isLargerFont?: boolean;
   onToggleFont?: () => void;
-  onOpenDigiLocker?: () => void;
   onTripleTapLogo?: () => void;
+  onReplayIntro?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,8 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   onLangChange,
   isLargerFont,
   onToggleFont,
-  onOpenDigiLocker,
   onTripleTapLogo,
+  onReplayIntro,
 }) => {
   const { setIsA11yMenuOpen } = useAccessibility();
   return (
@@ -54,8 +55,15 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onTripleTapLogo}
             title="Click or triple-tap for Developer HUD"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-950 via-indigo-900 to-orange-500 flex items-center justify-center text-white shadow-md shadow-indigo-950/20 flex-shrink-0 group-hover:scale-105 transition-transform">
-              <Building2 className="w-5 h-5 text-orange-300" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border border-emerald-100 p-1 flex items-center justify-center shadow-xs shadow-indigo-950/10 flex-shrink-0 group-hover:scale-105 transition-transform">
+              <Image
+                src="/logo-emblem.png"
+                alt="Scheme Seva Kendra Logo"
+                width={44}
+                height={44}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -72,8 +80,21 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Right Controls: Accessibility & Lang Switcher */}
+          {/* Right Controls: 3D Intro Replay, Accessibility & Lang Switcher */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+            {/* 3D Intro Replay Button */}
+            {onReplayIntro && (
+              <button
+                type="button"
+                onClick={onReplayIntro}
+                className="h-8 px-2 sm:px-2.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+                title={currentLang === 'hi' ? '3D राष्ट्रीय मुद्रा एनीमेशन पुनः देखें' : 'Replay 3D National Seal Intro'}
+              >
+                <span className="text-sm">🪙</span>
+                <span className="hidden sm:inline">{currentLang === 'hi' ? '3D एनीमेशन' : '3D Intro'}</span>
+              </button>
+            )}
+
             {/* Single Unified Accessibility Button */}
             <button
               className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs group cursor-pointer"
