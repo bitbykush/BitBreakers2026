@@ -24,6 +24,20 @@
 .wave-bar:nth-child(4) { animation-delay: 0.54s; }
 .wave-bar:nth-child(5) { animation-delay: 0.24s; }
 
+/* 3D Holographic Coin Glint Animation */
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(-45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(-45deg);
+  }
+}
+
+.animate-shimmer-sweep {
+  animation: shimmerSweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* Accessibility high-contrast, font-scaling & TalkBack focus */
 .a-plus {
   font-size: 112% !important;

@@ -37,6 +37,7 @@ import { SchemeMatch, ApplicantProfile } from '@/types';
 import { useDevHUD } from '@/hooks/useDevHUD';
 import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
 import { CompareDrawer } from '@/components/compare/CompareDrawer';
+import { CommonAppFormat } from '@/components/caf/CommonAppFormat';
 
 type NavTabId =
   | 'details'
@@ -84,6 +85,7 @@ export default function SchemeDetailsPage() {
   // Feedback widget state
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<null | 'helpful' | 'unhelpful'>(null);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isCafModalOpen, setIsCafModalOpen] = useState(false);
 
   // Dev HUD
   const { isOpen: isDevHudOpen, toggle: toggleDevHud, handleTripleTap } = useDevHUD();
@@ -248,6 +250,14 @@ export default function SchemeDetailsPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
+              onClick={() => setIsCafModalOpen(true)}
+              className="h-8 px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-100" />
+              <span>{currentLang === 'hi' ? '📑 आवेदन पत्र डाउनलोड करें (CAF)' : '📑 Download Scheme Form (CAF)'}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setIsCompareOpen(true)}
               className="h-8 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-950 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
             >
@@ -278,7 +288,15 @@ export default function SchemeDetailsPage() {
                   {t}
                 </span>
               ))}
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsCafModalOpen(true)}
+                className="px-3.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>{currentLang === 'hi' ? '📑 आवेदन पत्र डाउनलोड करें' : '📑 Download Application Form'}</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setIsCompareOpen(true)}
@@ -515,13 +533,21 @@ export default function SchemeDetailsPage() {
                 ))}
               </div>
 
-              <div className="pt-2">
+              <div className="pt-3 flex flex-col sm:flex-row items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCafModalOpen(true)}
+                  className="w-full sm:w-1/2 py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-emerald-200" />
+                  <span>{currentLang === 'hi' ? '📑 आवेदन पत्र डाउनलोड करें (CAF Dossier)' : '📑 Download Application Form (CAF Dossier)'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => router.push('/apply')}
-                  className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
+                  className="w-full sm:w-1/2 py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-md active:scale-95 cursor-pointer"
                 >
-                  <span>{currentLang === 'hi' ? 'ऑनलाइन आवेदन हेतु कस्टम विवरण भरें' : 'Fill Custom Details & Apply'}</span>
+                  <span>{currentLang === 'hi' ? 'ऑनलाइन कस्टम विवरण भरें' : 'Fill Custom Details & Apply'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -785,6 +811,15 @@ export default function SchemeDetailsPage() {
         schemes={MOCK_SCHEMES}
         initialScheme={scheme}
         onProceedPathway2={() => router.push('/apply')}
+        currentLang={currentLang}
+      />
+
+      {/* Printable Common Application Format Modal */}
+      <CommonAppFormat
+        isOpen={isCafModalOpen}
+        onClose={() => setIsCafModalOpen(false)}
+        profile={profile}
+        selectedScheme={scheme}
         currentLang={currentLang}
       />
 

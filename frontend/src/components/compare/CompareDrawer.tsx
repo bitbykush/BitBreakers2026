@@ -549,7 +549,7 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
                         href={`/schemes/${schemeA.id}`}
                         className="w-full sm:flex-1 h-9 px-3 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 text-xs font-bold flex items-center justify-center gap-1.5 transition text-center"
                       >
-                        <span>{currentLang === 'hi' ? 'पूरा विवरण (8 टैब)' : 'View 8 Tabs'}</span>
+                        <span>{currentLang === 'hi' ? 'पूरा विवरण' : 'View Details'}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                       {onProceedPathway2 && (
@@ -721,7 +721,7 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
                         href={`/schemes/${schemeB.id}`}
                         className="w-full sm:flex-1 h-9 px-3 rounded-xl border border-orange-200 bg-orange-50/70 hover:bg-orange-100 text-orange-950 text-xs font-bold flex items-center justify-center gap-1.5 transition text-center"
                       >
-                        <span>{currentLang === 'hi' ? 'पूरा विवरण (8 टैब)' : 'View 8 Tabs'}</span>
+                        <span>{currentLang === 'hi' ? 'पूरा विवरण' : 'View Details'}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                       {onProceedPathway2 && (

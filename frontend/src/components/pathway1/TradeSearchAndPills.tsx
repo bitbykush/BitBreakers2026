@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, Mic, Compass, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Mic, Compass, Check, X, ArrowRight } from 'lucide-react';
 import { TRADE_PRESETS } from '@/lib/mockData';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
@@ -20,6 +20,43 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllTrades, setShowAllTrades] = useState(false);
+
+  const PLACEHOLDERS_HI = [
+    "उदा. 'माटी के बर्तन बनाने के लिए 2 लाख का लोन'...",
+    "उदा. 'सिलाई मशीन व महिला सहायता 35% सब्सिडी'...",
+    "उदा. 'पीएम विश्वकर्मा ₹15,000 टूलकिट अनुदान'...",
+    "उदा. 'पीएम सूर्य घर सोलर रूफटॉप योजना'...",
+    "उदा. 'चाय की दुकान, फल विक्रेता पीएम स्वनिधि लोन'...",
+    "उदा. 'डेयरी फार्मिंग, दूध उत्पादन व पशुपालन ऋण'...",
+  ];
+
+  const PLACEHOLDERS_EN = [
+    "e.g. 'Women Tailoring Machine 35% Subsidy'...",
+    "e.g. 'PM Vishwakarma Toolkit ₹15,000 Free'...",
+    "e.g. 'PM Surya Ghar Solar Rooftop Grant'...",
+    "e.g. 'Terracotta pottery workshop ₹2 Lakh loan'...",
+    "e.g. 'PM SVANidhi Street Vendor Credit'...",
+    "e.g. 'Dairy farming & animal husbandry loan'...",
+  ];
+
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  useEffect(() => {
+    if (searchQuery) return;
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS_EN.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [searchQuery, PLACEHOLDERS_EN.length]);
+
+  const activePlaceholder = currentLang === 'hi'
+    ? PLACEHOLDERS_HI[placeholderIndex]
+    : PLACEHOLDERS_EN[placeholderIndex];
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    onSearchChange('');
+  };
 
   const {
     isRecording,
@@ -62,30 +99,44 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
 
       {/* Search Bar with Mic and Language Switcher */}
       <div className="relative z-10 max-w-3xl mx-auto mt-6">
-        <div className="bg-white rounded-2xl p-2 shadow-2xl flex flex-col sm:flex-row items-center gap-2 border-2 border-orange-500/80 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/20 transition-all">
-          {/* Search Input */}
-          <div className="flex items-center gap-2.5 flex-1 w-full px-3 py-1.5">
-            <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
+        <div className="bg-white rounded-2xl p-2 sm:p-2.5 shadow-2xl flex flex-col sm:flex-row items-center gap-2 border-2 border-orange-400/90 ring-4 ring-orange-500/25 shadow-orange-500/10 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/30 transition-all">
+          {/* Search Input with Framed Lens & Clear Button */}
+          <div className="flex items-center gap-2.5 flex-1 w-full px-2 py-1">
+            <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center flex-shrink-0 shadow-2xs border border-orange-100">
+              <Search className="w-4 h-4" />
+            </div>
             <input
               type="text"
               value={searchQuery}
               onChange={handleInputChange}
-              placeholder={
-                currentLang === 'hi'
-                  ? 'अपना काम खोजें (उदा. चाय की दुकान, बढ़ई, सिलाई, कुम्हार, डेयरी...)'
-                  : 'Search your trade, craft, or work (e.g. Chai stall, Carpenter, Tailor, Dairy...)'
-              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  onSearchChange(searchQuery);
+                }
+              }}
+              placeholder={activePlaceholder}
               className="w-full bg-transparent text-slate-900 placeholder-slate-400 text-xs sm:text-sm font-medium border-none focus:outline-none focus:ring-0"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition cursor-pointer flex-shrink-0"
+                title="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {/* Right Controls: Voice Lang Switcher + Voice Mic Button */}
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end px-2 pb-1 sm:pb-0">
-            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold">
+          {/* Right Controls: Language Switcher + Voice Mic + Primary Search CTA */}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end px-1 sm:px-1.5 pb-1 sm:pb-0 flex-shrink-0">
+            {/* Bilingual Voice Lang Switcher */}
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setVoiceLang('hi-IN')}
-                className={`h-7 px-2 rounded-md transition ${
+                className={`h-7 px-2.5 rounded-md transition text-xs font-bold cursor-pointer ${
                   voiceLang === 'hi-IN' ? 'bg-indigo-950 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -94,7 +145,7 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
               <button
                 type="button"
                 onClick={() => setVoiceLang('en-IN')}
-                className={`h-7 px-2 rounded-md transition ${
+                className={`h-7 px-2.5 rounded-md transition text-xs font-bold cursor-pointer ${
                   voiceLang === 'en-IN' ? 'bg-indigo-950 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -102,23 +153,32 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
               </button>
             </div>
 
+            {/* Voice Mic Button */}
             <button
               type="button"
               onClick={toggleRecording}
-              className={`h-8 relative flex items-center gap-1.5 px-3 rounded-lg text-white text-xs font-semibold shadow-sm transition-all active:scale-95 whitespace-nowrap ${
+              className={`h-9 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 flex-shrink-0 ${
                 isRecording
-                  ? 'bg-rose-600 ring-4 ring-rose-300 animate-pulse'
-                  : 'bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 shadow-orange-600/30'
+                  ? 'bg-rose-600 text-white ring-4 ring-rose-300 animate-pulse'
+                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border border-indigo-200/80'
               }`}
+              title={currentLang === 'hi' ? 'बोलकर खोजें (Voice Search)' : 'Voice Search'}
             >
-              <Mic className="w-3.5 h-3.5" />
-              <span>
-                {isRecording
-                  ? 'Listening... बोलिए'
-                  : currentLang === 'hi'
-                  ? 'बोलकर खोजें'
-                  : 'Tap to Speak / बोलें'}
+              <Mic className="w-4 h-4 text-indigo-700" />
+              <span className="hidden sm:inline">
+                {isRecording ? 'बोलिए...' : currentLang === 'hi' ? 'बोलें' : 'Voice'}
               </span>
+            </button>
+
+            {/* Primary Search CTA Button - Anchored at the far right */}
+            <button
+              type="button"
+              onClick={() => onSearchChange(searchQuery)}
+              className="h-9 px-4 sm:px-5 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white text-xs font-black shadow-md shadow-orange-500/25 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer flex-shrink-0"
+              title={currentLang === 'hi' ? 'खोजें (Search)' : 'Search'}
+            >
+              <span>{currentLang === 'hi' ? 'खोजें' : 'Search'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

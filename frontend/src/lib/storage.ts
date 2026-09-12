@@ -108,8 +108,10 @@ export const StorageService = {
 
   verifyDocument(code: string, source: DocumentRecord['verificationSource'], refId: string): DocumentRecord[] {
     const docs = this.getDocuments();
+    const norm = (c: string) => c.replace(/^DOC_/, '').toUpperCase();
+    const targetNorm = norm(code);
     const updated = docs.map((doc) => {
-      if (doc.code === code) {
+      if (norm(doc.code) === targetNorm || doc.code === code) {
         return {
           ...doc,
           isVerified: true,
@@ -120,6 +122,54 @@ export const StorageService = {
       }
       return doc;
     });
+    this.saveDocuments(updated);
+    return updated;
+  },
+
+  saveUploadedDocument(
+    code: string,
+    fileDataUrl: string,
+    fileName: string,
+    fileSize: string,
+    refId?: string,
+    source: DocumentRecord['verificationSource'] = 'RAPIDOCR'
+  ): DocumentRecord[] {
+    const docs = this.getDocuments();
+    const norm = (c: string) => c.replace(/^DOC_/, '').toUpperCase();
+    const targetNorm = norm(code);
+    let found = false;
+    const updated = docs.map((doc) => {
+      if (norm(doc.code) === targetNorm || doc.code === code) {
+        found = true;
+        return {
+          ...doc,
+          isVerified: true,
+          verificationSource: source,
+          referenceId: refId || doc.referenceId || `VER-${Date.now().toString().slice(-6)}`,
+          verifiedAt: new Date().toISOString(),
+          fileDataUrl,
+          fileName,
+          fileSize,
+        };
+      }
+      return doc;
+    });
+
+    if (!found) {
+      updated.push({
+        code: code.startsWith('DOC_') ? code : `DOC_${code}`,
+        name: fileName,
+        nameHi: fileName,
+        isVerified: true,
+        verificationSource: source,
+        referenceId: refId || `VER-${Date.now().toString().slice(-6)}`,
+        verifiedAt: new Date().toISOString(),
+        fileDataUrl,
+        fileName,
+        fileSize,
+      });
+    }
+
     this.saveDocuments(updated);
     return updated;
   },
