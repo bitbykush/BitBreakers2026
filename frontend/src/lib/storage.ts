@@ -112,7 +112,24 @@ export const StorageService = {
     if (typeof window === 'undefined') return DEFAULT_DOCUMENTS;
     try {
       const data = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
-      return data ? JSON.parse(data) : DEFAULT_DOCUMENTS;
+      if (!data) return DEFAULT_DOCUMENTS;
+      const docs: DocumentRecord[] = JSON.parse(data);
+      // Ensure only documents with actual user uploaded files are treated as verified for non-OCR types
+      return docs.map((doc) => {
+        const norm = doc.code.replace(/^DOC_/, '').toUpperCase();
+        if (norm === 'RURAL' || norm === 'PROJECT_REPORT') {
+          if (!doc.fileDataUrl || doc.fileDataUrl.includes('JVBERi0xLjQKJcTl8uXrp')) {
+            return {
+              ...doc,
+              isVerified: false,
+              fileDataUrl: undefined,
+              fileName: undefined,
+              fileSize: undefined,
+            };
+          }
+        }
+        return doc;
+      });
     } catch {
       return DEFAULT_DOCUMENTS;
     }
