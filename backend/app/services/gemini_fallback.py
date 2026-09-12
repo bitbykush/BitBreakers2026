@@ -135,7 +135,7 @@ MANDATORY RULES:
    - "masked_aadhaar": UIDAI masked number. The first 8 digits MUST be masked with 'X', formatted strictly as 'XXXX-XXXX-1234' (showing ONLY the last 4 digits).
    - "address": full residential address if visible on the back side of the card.
    - "state": Indian state or Union Territory (e.g. 'Uttar Pradesh', 'Bihar').
-   - "district": District name if mentioned in address (e.g. 'Gorakhpur', 'Varanasi').
+   - "district": District or city name extracted strictly from the address line immediately before the state (e.g. for "Vigyan Nagar, Kota, Rajasthan" the district is "Kota"). NEVER invent, guess, or default to any district name not present in the document. If no district is found, set to null.
    - "pincode": 6-digit postal pincode.
 4. For CASTE:
    - "category": SC | ST | OBC | EWS | General (or null if not found).

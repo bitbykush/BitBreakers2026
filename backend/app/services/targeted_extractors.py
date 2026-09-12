@@ -31,6 +31,45 @@ HINDI_STATE_MAP = {
     "ओडिशा": "Odisha",
 }
 
+HINDI_DISTRICT_MAP = {
+    "कोटा": "Kota",
+    "वाराणसी": "Varanasi",
+    "बनारस": "Varanasi",
+    "काशी": "Varanasi",
+    "गोरखपुर": "Gorakhpur",
+    "जयपुर": "Jaipur",
+    "जोधपुर": "Jodhpur",
+    "उदयपुर": "Udaipur",
+    "बीकानेर": "Bikaner",
+    "अजमेर": "Ajmer",
+    "अलवर": "Alwar",
+    "भरतपुर": "Bharatpur",
+    "भीलवाड़ा": "Bhilwara",
+    "सीकर": "Sikar",
+    "पाली": "Pali",
+    "लखनऊ": "Lucknow",
+    "कानपुर": "Kanpur",
+    "प्रयागराज": "Prayagraj",
+    "इलाहाबाद": "Prayagraj",
+    "पटना": "Patna",
+    "इंदौर": "Indore",
+    "भोपाल": "Bhopal",
+    "ग्वालियर": "Gwalior",
+    "जबलपुर": "Jabalpur",
+    "पुणे": "Pune",
+    "नागपुर": "Nagpur",
+    "ठाणे": "Thane",
+    "मुंबई": "Mumbai",
+    "नासिक": "Nashik",
+    "औरंगाबाद": "Aurangabad",
+    "दिल्ली": "Delhi",
+    "मेरठ": "Meerut",
+    "आगरा": "Agra",
+    "बरेली": "Bareilly",
+    "गाजियाबाद": "Ghaziabad",
+    "नोएडा": "Gautam Buddha Nagar",
+}
+
 COMMON_MIDDLE_NAMES = {
     "kumar", "kumari", "devi", "prasad", "lal", "chandra", "singh",
     "ram", "nath", "babu", "dayal", "prakash", "kishore", "kant",
@@ -437,12 +476,12 @@ class TargetedDocumentExtractor:
                     data["state"] = en_state
                     break
 
-        # Look for District
-        dist_match = re.search(r'(?:DISTRICT|DIST|DIST\.?|जिला)[:\s\-]*([A-Za-z]+)', back_text, re.IGNORECASE)
+        # Look for District (explicit keywords)
+        dist_match = re.search(r'(?:DISTRICT|DIST|DIST\.?|जिला|ज़िला)[:\s\-]*([A-Za-z\u0900-\u097F]+)', back_text, re.IGNORECASE)
         if dist_match:
             candidate_dist = dist_match.group(1).strip()
             if candidate_dist.upper() not in ["OF", "THE", "INDIA"]:
-                data["district"] = candidate_dist.title()
+                data["district"] = HINDI_DISTRICT_MAP.get(candidate_dist, candidate_dist.title())
 
         # Look for Address block
         addr_match = re.search(
@@ -480,9 +519,34 @@ class TargetedDocumentExtractor:
 
         # Fallback district from address if not matched yet
         if not data["district"] and data["address"]:
-            d_match = re.search(r'(?:Dist|District|Dist\.)[:\s\-]*([A-Za-z]+)', data["address"], re.IGNORECASE)
+            d_match = re.search(r'(?:Dist|District|Dist\.|जिला|ज़िला)[:\s\-]*([A-Za-z\u0900-\u097F]+)', data["address"], re.IGNORECASE)
             if d_match and d_match.group(1).upper() not in ["OF", "THE", "INDIA"]:
-                data["district"] = d_match.group(1).strip().title()
+                cand = d_match.group(1).strip()
+                data["district"] = HINDI_DISTRICT_MAP.get(cand, cand.title())
+
+        # Structural district extraction: city/district immediately preceding the state
+        # (Standard Aadhaar format: ..., <District/City>, <State> - <Pincode>)
+        if not data["district"] and data["state"]:
+            state_esc = re.escape(data["state"])
+            st_match = re.search(r'([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s*,\s*' + state_esc, back_text, re.IGNORECASE)
+            if st_match:
+                cand = st_match.group(1).split(',')[-1].strip()
+                noise_words = {"OF", "THE", "INDIA", "NEAR", "POST", "ROAD", "MARG", "NAGAR", "COLONY", "LANE", "VILLAGE", "VILL", "TEHSIL"}
+                if cand.upper() not in noise_words and len(cand) >= 3:
+                    data["district"] = HINDI_DISTRICT_MAP.get(cand, cand.title())
+
+        # Check Hindi state if English state wasn't directly matched
+        if not data["district"]:
+            for h_st, en_st in HINDI_STATE_MAP.items():
+                if h_st in back_text:
+                    h_match = re.search(r'([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s*,\s*' + re.escape(h_st), back_text)
+                    if h_match:
+                        cand = h_match.group(1).split(',')[-1].strip()
+                        if len(cand) >= 3:
+                            data["district"] = HINDI_DISTRICT_MAP.get(cand, cand.title())
+                            if not data["state"]:
+                                data["state"] = en_st
+                            break
 
         return data
 
