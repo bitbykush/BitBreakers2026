@@ -91,8 +91,9 @@ def _split_single_word(w: str) -> List[str]:
             if suffix in COMMON_SURNAMES or suffix in COMMON_MIDDLE_NAMES:
                 return [w[:len(mid)]] + _split_single_word(w[len(mid):])
 
-    # 2. Check if ends with a known surname (e.g. 'rohitsingh' -> 'rohit' + 'singh', 'devikushwaha' -> 'devi' + 'kushwaha')
-    for sur in sorted(COMMON_SURNAMES, key=len, reverse=True):
+    # 2. Check if ends with a known surname or middle name (e.g. 'rohitsingh' -> 'rohit' + 'singh', 'kushagrakumar' -> 'kushagra' + 'kumar')
+    all_endings = COMMON_SURNAMES.union(COMMON_MIDDLE_NAMES)
+    for sur in sorted(all_endings, key=len, reverse=True):
         if low.endswith(sur) and len(low) > len(sur) + 2:
             prefix = low[:-len(sur)]
             if prefix in COMMON_MIDDLE_NAMES or len(prefix) >= 3:
@@ -236,6 +237,80 @@ def clean_human_name(candidate_line: str) -> Optional[str]:
     if len(normalized) >= 2:
         return normalized.title()
     return None
+
+
+WORD_NUMBERS = {
+    "ZERO": 0, "ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5,
+    "SIX": 6, "SEVEN": 7, "EIGHT": 8, "NINE": 9, "TEN": 10,
+    "ELEVEN": 11, "TWELVE": 12, "THIRTEEN": 13, "FOURTEEN": 14, "FIFTEEN": 15,
+    "SIXTEEN": 16, "SEVENTEEN": 17, "EIGHTEEN": 18, "NINETEEN": 19,
+    "TWENTY": 20, "THIRTY": 30, "FORTY": 40, "FIFTY": 50,
+    "SIXTY": 60, "SEVENTY": 70, "EIGHTY": 80, "NINETY": 90, "HUNDRED": 100
+}
+
+
+def parse_words_to_number(text: str) -> Optional[int]:
+    """Parses joined or spaced words like 'EIGHTYTWO', 'EIGHTY TWO', 'NINETYFIVE' into integers."""
+    t = text.upper().replace("-", " ").strip()
+    for tens_word, tens_val in [
+        ("NINETY", 90), ("EIGHTY", 80), ("SEVENTY", 70), ("SIXTY", 60),
+        ("FIFTY", 50), ("FORTY", 40), ("THIRTY", 30), ("TWENTY", 20)
+    ]:
+        if t.startswith(tens_word):
+            rest = t[len(tens_word):].strip()
+            if not rest:
+                return tens_val
+            for unit_word, unit_val in [
+                ("ONE", 1), ("TWO", 2), ("THREE", 3), ("FOUR", 4), ("FIVE", 5),
+                ("SIX", 6), ("SEVEN", 7), ("EIGHT", 8), ("NINE", 9)
+            ]:
+                if rest == unit_word:
+                    return tens_val + unit_val
+    if t in ["HUNDRED", "ONE HUNDRED"]:
+        return 100
+    for w, v in WORD_NUMBERS.items():
+        if t == w:
+            return v
+    return None
+
+
+def classify_education_level(text: str) -> Optional[str]:
+    """
+    Classifies academic qualification across CBSE, ICSE, State Boards, Polytechnic, and Universities.
+    Ensures precise word boundaries to prevent false positives (e.g. 'hsc' inside 'englishschool').
+    Handles joint board titles like 'BOARD OF HIGH SCHOOL AND INTERMEDIATE EDUCATION'.
+    """
+    upper = text.upper()
+    # 1. PostGraduate
+    if re.search(r'\b(POST\s*GRADUAT|MASTER\s*OF|M\.?\s*TECH|M\.?\s*SC|M\.?\s*COM|M\.?\s*A\b|M\.?\s*B\.?\s*A|M\.?\s*C\.?\s*A|परास्नातक)', upper):
+        return "PostGraduate"
+
+    # 2. Graduate / Bachelor / University Degree
+    if re.search(r'\b(BACHELOR\s*OF|B\.?\s*TECH|B\.?\s*E\b|B\.?\s*SC|B\.?\s*COM|B\.?\s*A\b|B\.?\s*B\.?\s*A|B\.?\s*C\.?\s*A|DEGREE\s*EXAMINATION|GRADUATION|स्नातक)', upper):
+        return "Graduate"
+
+    # 3. ITI / Polytechnic / Diploma
+    if re.search(r'\b(POLYTECHNIC|DIPLOMA|INDUSTRIAL\s*TRAINING|NATIONAL\s*TRADE\s*CERTIFICATE|\bNTC\b|\bITI\b)', upper):
+        return "ITI"
+
+    # Neutralize joint board authority headers that include BOTH high school and intermediate
+    clean_upper = re.sub(r'HIGH\s*SCHOOL\s*(?:AND|&)\s*INTERMEDIATE', '', upper)
+
+    # 4. Class 12th (Senior Secondary / Higher Secondary / Intermediate / Class XII / HSC)
+    if re.search(r'\b(SENIOR\s*SECONDARY|HIGHER\s*SECONDARY|SENIOR\s*SCHOOL|INTERMEDIATE\s*EXAMINATION|INTERMEDIATE\s*CERTIFICATE|CLASS\s*XII\b|CLASS\s*12\b|12TH\b|TWELFTH|\+2\b|\bH\.?S\.?C\b|उच्च\s*माध्यमिक|इण्टरमीडिएट)', clean_upper):
+        return "12th"
+
+    # 5. Class 10th (Secondary School / High School / Matriculation / Class X / SSC)
+    if re.search(r'(?:SECONDARY\s*SCHOOL|SECONDARY\s*EXAMINATION|SECONDARYSCHOOLEXAMINATION|HIGH\s*SCHOOL\s*EXAMINATION|HIGH\s*SCHOOL|MATRIC(?:ULATION)?|CLASS\s*X\b|CLASS\s*10\b|10TH\b|TENTH|\bS\.?S\.?C\b|MADHYAMIK|माध्यमिक|हाईस्कूल|प्रवेशिका|दशमी)', clean_upper):
+        return "10th"
+
+    # 6. Fallback checks on clean_upper
+    if re.search(r'\bINTERMEDIATE\b', clean_upper):
+        return "12th"
+    if re.search(r'\bSECONDARY\b', clean_upper) and not re.search(r'\b(SENIOR|HIGHER)\b', clean_upper):
+        return "10th"
+
+    return "10th"
 
 
 class TargetedDocumentExtractor:
@@ -499,45 +574,141 @@ class TargetedDocumentExtractor:
 
     def extract_marksheet(self, text_lines: List[str]) -> Dict[str, Any]:
         """
-        Targeted Extractor for Marksheet / Academic Certificate:
-        Extracts Academic Percentage and Highest Education Qualification.
+        Targeted Extractor for Marksheet / Academic Certificate across all Indian boards & colleges:
+        - Classifies education: 10th | 12th | ITI | Graduate | PostGraduate
+        - Computes percentage: Explicit %, Total/Max ratio, CGPA x 9.5, or tabular subject marks
+        - Extracts student name, date of birth, and roll number
         """
         data: Dict[str, Any] = {
             "marks_percentage": None,
             "highest_education": None,
+            "name": None,
+            "dob": None,
+            "certificate_number": None,
         }
         full_text = " ".join(text_lines)
 
-        # 1. Regex: Percentage (e.g. 78.5%, 82%)
+        # 1. Education Qualification Classification
+        data["highest_education"] = classify_education_level(full_text)
+
+        # 2. Percentage Extraction (Multi-Strategy)
+        # Strategy A: Explicit percentage with % sign
         pct_match = re.search(r'\b([4-9][0-9](?:\.[0-9]{1,2})?)\s?%', full_text)
         if pct_match:
             try:
                 data["marks_percentage"] = float(pct_match.group(1))
             except ValueError:
                 pass
-        else:
-            pct_label_match = re.search(r'(?:PERCENTAGE|MARKS|प्रतिशत)[:\s]*([4-9][0-9](?:\.[0-9]{1,2})?)', full_text, re.IGNORECASE)
+
+        # Strategy B: Percentage label
+        if not data["marks_percentage"]:
+            pct_label_match = re.search(r'(?:PERCENTAGE|AGGREGATE|प्रतिशत)[:\s]*([4-9][0-9](?:\.[0-9]{1,2})?)', full_text, re.IGNORECASE)
             if pct_label_match:
                 try:
                     data["marks_percentage"] = float(pct_label_match.group(1))
                 except ValueError:
                     pass
 
-        # 2. Education Qualification Benchmark
-        full_lower = full_text.lower()
-        mapped_edu = None
+        # Strategy C: CGPA to Percentage (UGC/CBSE conversion: CGPA * 9.5)
+        if not data["marks_percentage"]:
+            cgpa_match = re.search(r'\b(?:CGPA|GPA)[:\s]*([4-9](?:\.[0-9]{1,2})?|10(?:\.0)?)\b', full_text, re.IGNORECASE)
+            if cgpa_match:
+                try:
+                    cgpa_val = float(cgpa_match.group(1))
+                    data["marks_percentage"] = round(cgpa_val * 9.5, 1)
+                except ValueError:
+                    pass
 
-        for edu_key, keywords in self.education_keywords.items():
-            if any(kw in full_lower for kw in keywords):
-                if edu_key == "GRADUATE":
-                    mapped_edu = "Graduate"
-                elif edu_key == "12TH_PASS":
-                    mapped_edu = "12th"
-                elif edu_key == "DIPLOMA":
-                    mapped_edu = "ITI"
-                elif edu_key == "10TH_PASS":
-                    mapped_edu = "10th"
+        # Strategy D: Total Marks / Maximum Marks ratio (e.g. 429/500)
+        if not data["marks_percentage"]:
+            ratio_match = re.search(r'(?:TOTAL|GRAND TOTAL|AGGREGATE|प्राप्तांक)[:\s]*([0-9]{3})\s*(?:/|OUT OF)\s*([0-9]{3})', full_text, re.IGNORECASE)
+            if ratio_match:
+                try:
+                    obtained = float(ratio_match.group(1))
+                    maximum = float(ratio_match.group(2))
+                    if 0 < obtained <= maximum:
+                        data["marks_percentage"] = round((obtained / maximum) * 100.0, 1)
+                except ValueError:
+                    pass
+
+        # Strategy E: Tabular Subject Marks in Words (CBSE / State Boards)
+        if not data["marks_percentage"]:
+            found_word_marks = []
+            for line in text_lines:
+                matches = re.findall(r'\b((?:NINETY|EIGHTY|SEVENTY|SIXTY|FIFTY|FORTY|THIRTY|TWENTY)\s*(?:ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE)?)\b', line.upper())
+                for m in matches:
+                    val = parse_words_to_number(m)
+                    if val and 33 <= val <= 100:
+                        found_word_marks.append(val)
+            if len(found_word_marks) >= 4:
+                top5 = sorted(found_word_marks, reverse=True)[:5]
+                data["marks_percentage"] = round(sum(top5) / len(top5), 1)
+
+        # Strategy F: Tabular Subject Marks in Digits (last numeric token in subject lines)
+        if not data["marks_percentage"]:
+            candidate_subject_marks = []
+            for line in text_lines:
+                # Check for lines with subject codes or marks: contains 2-3 numbers
+                nums = [int(n) for n in re.findall(r'\b([0-9]{2,3})\b', line)]
+                # Filter marks between 33 and 100
+                subject_scores = [n for n in nums if 33 <= n <= 100]
+                if subject_scores:
+                    # On CBSE marksheets, the total is usually the highest or last score in the row
+                    candidate_subject_marks.append(max(subject_scores))
+            if len(candidate_subject_marks) >= 5:
+                top5 = sorted(candidate_subject_marks, reverse=True)[:5]
+                data["marks_percentage"] = round(sum(top5) / len(top5), 1)
+
+        # 3. Student Name Extraction
+        for idx, line in enumerate(text_lines):
+            upper_line = line.upper()
+            if any(c in upper_line for c in ["THIS IS TO CERTIFY THAT", "CERTIFY THAT", "NAME OF CANDIDATE", "CANDIDATE NAME"]):
+                if idx + 1 < len(text_lines):
+                    cand = text_lines[idx + 1].strip()
+                    name_candidate = clean_human_name(cand)
+                    if name_candidate and len(name_candidate.split()) >= 2:
+                        data["name"] = name_candidate
+                        break
+            if "ROLL NO" in upper_line and idx > 0:
+                cand = text_lines[idx - 1].strip()
+                name_candidate = clean_human_name(cand)
+                if name_candidate and len(name_candidate.split()) >= 2:
+                    data["name"] = name_candidate
+                    break
+
+        # 4. Date of Birth Extraction (Prioritize lines with 'DATE OF BIRTH' or 'DOB')
+        for idx, line in enumerate(text_lines):
+            if any(c in line.upper() for c in ["DATE OF BIRTH", "DATEOF BIRTH", "DOB", "जन्म तिथि"]):
+                # Check current line and next line
+                check_lines = [line]
+                if idx + 1 < len(text_lines):
+                    check_lines.append(text_lines[idx + 1])
+                for cl in check_lines:
+                    dob_match = re.search(r'(\d{2}[/-]\d{2}[/-]\d{4})', cl)
+                    if dob_match:
+                        data["dob"] = dob_match.group(1).replace("-", "/")
+                        break
+                if data["dob"]:
+                    break
+
+        # Fallback: scan any line for standard DD/MM/YYYY DOB with year between 1970 and 2015
+        if not data["dob"]:
+            for line in text_lines:
+                m = re.search(r'(\d{2}[/-]\d{2}[/-](?:19[7-9]\d|20[0-1]\d))', line)
+                if m:
+                    data["dob"] = m.group(1).replace("-", "/")
+                    break
+
+        # 5. Roll Number / Certificate Number Extraction
+        for idx, line in enumerate(text_lines):
+            m = re.search(r'(?:ROLL\s*NO\.?|ROLL\s*NUMBER|REGN\.?\s*NO\.?)[:\s]*([0-9A-Z/-]{6,16})', line, re.IGNORECASE)
+            if m:
+                data["certificate_number"] = m.group(1).strip()
                 break
+            if "ROLL NO" in line.upper() and idx + 1 < len(text_lines):
+                next_line = text_lines[idx + 1].strip()
+                if re.match(r'^[0-9A-Z/-]{6,16}$', next_line):
+                    data["certificate_number"] = next_line
+                    break
 
-        data["highest_education"] = mapped_edu
         return data

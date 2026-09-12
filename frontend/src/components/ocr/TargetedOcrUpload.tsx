@@ -377,9 +377,10 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
                 </span>
               )}
 
-              {extractedData.marks_percentage && (
+              {(extractedData.marks_percentage !== undefined && extractedData.marks_percentage !== null || extractedData.highest_education) && (
                 <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
-                  {extractedData.marks_percentage}% Marks ({extractedData.highest_education})
+                  {extractedData.highest_education ? `${extractedData.highest_education} Pass ` : ''}
+                  {extractedData.marks_percentage !== undefined && extractedData.marks_percentage !== null ? `(${extractedData.marks_percentage}%)` : ''}
                 </span>
               )}
 

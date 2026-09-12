@@ -175,22 +175,37 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Highest Qualification</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Highest Qualification (शैक्षणिक योग्यता)</label>
               <select
                 value={profile.education}
                 onChange={(e) => handleFormChange('education', e.target.value as EducationLevel)}
                 className="w-full h-11 px-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 bg-white"
               >
-                <option value="10th">Class 10th Pass</option>
-                <option value="12th">Class 12th Pass</option>
-                <option value="ITI">ITI / Diploma</option>
-                <option value="Graduate">Graduate / Degree</option>
+                <option value="10th">Class 10th Pass (10वीं)</option>
+                <option value="12th">Class 12th Pass (12वीं / Inter)</option>
+                <option value="ITI">ITI / Diploma (डिप्लोमा)</option>
+                <option value="Graduate">Graduate / Degree (स्नातक)</option>
+                <option value="PostGraduate">Post Graduate / Master&apos;s (परास्नातक)</option>
                 <option value="Literate">Literate / Traditional Skill</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Trade</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Academic Marks / Percentage (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                placeholder="e.g. 89.0 (Auto-filled from Marksheet)"
+                value={profile.marksPercentage !== undefined && profile.marksPercentage !== null ? profile.marksPercentage : ''}
+                onChange={(e) => handleFormChange('marksPercentage', e.target.value ? parseFloat(e.target.value) : undefined)}
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Trade (लक्षित व्यवसाय / पेशा)</label>
               <input
                 type="text"
                 value={profile.profession ? `${profile.profession} (${profile.professionHi || ''})` : 'Traditional Artisan'}

@@ -96,6 +96,37 @@ def test_marksheet_extractor():
     print("[PASS] Marksheet Extractor passed: 78.5% marks and 10th qualification extracted accurately!")
 
 
+def test_cbse_tabular_marksheet_extractor():
+    print("Testing CBSE Tabular Marksheet Extractor (Multi-Board Format Support)...")
+    extractor = TargetedDocumentExtractor()
+
+    sample_lines = [
+        "CENTRAL BOARD OF SECONDARY EDUCATION",
+        "SECONDARY SCHOOL EXAMINATION 2024",
+        "This is to certify that",
+        "KUSHAGRAKUMARSINGH",
+        "Roll No. 23324939",
+        "Mother's Name: RANJU SINGH",
+        "Father's Name: DAYASHANKAR SINGH",
+        "Date of Birth",
+        "23-02-200823RDFEBRUARYTWOTHOUSANDEIGHT",
+        "082 EIGHTYTWO",
+        "088 EIGHTYEIGHT",
+        "081 EIGHTY ONE",
+        "095 NINETYFIVE",
+        "083 EIGHTYTHREE",
+        "097 NINETYSEVEN",
+    ]
+
+    extracted = extractor.extract_marksheet(sample_lines)
+    assert extracted["highest_education"] == "10th", f"Expected 10th, got {extracted['highest_education']}"
+    assert extracted["marks_percentage"] == 89.0, f"Expected 89.0, got {extracted['marks_percentage']}"
+    assert extracted["name"] == "Kushagra Kumar Singh", f"Expected 'Kushagra Kumar Singh', got '{extracted['name']}'"
+    assert extracted["dob"] == "23/02/2008", f"Expected '23/02/2008', got '{extracted['dob']}'"
+    assert extracted["certificate_number"] == "23324939", f"Expected '23324939', got '{extracted['certificate_number']}'"
+    print(f"[PASS] CBSE Tabular Marksheet passed: 10th Class, 89.0% (top 5 average), '{extracted['name']}', DOB {extracted['dob']}, Roll No {extracted['certificate_number']}!")
+
+
 def test_image_downscaling():
     print("Testing 512MB RAM Image Downscaling Guardrail...")
     engine = ScopedOCREngine()
@@ -277,6 +308,7 @@ if __name__ == "__main__":
     test_caste_extractor()
     test_income_extractor()
     test_marksheet_extractor()
+    test_cbse_tabular_marksheet_extractor()
     test_image_downscaling()
     test_gemini_permission_gate()
     print("\n[SUCCESS] ALL OCR, MULTI-IMAGE, NAME SPACING & ORDERING TESTS PASSED 100%!")
