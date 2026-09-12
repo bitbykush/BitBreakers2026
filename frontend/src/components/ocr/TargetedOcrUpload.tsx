@@ -15,6 +15,7 @@ import {
   RefreshCw,
   FileText,
   Paperclip,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { OcrDocType, OcrExtractedData } from '@/types';
 import { ApiService } from '@/lib/api';
@@ -26,7 +27,7 @@ interface TargetedOcrUploadProps {
   onExtractSuccess: (data: OcrExtractedData, fileDataUrl?: string, fileName?: string) => void;
 }
 
-type UploadStatus = 'idle' | 'scanning' | 'verifying' | 'needs_permission' | 'verified' | 'unverified';
+type UploadStatus = 'idle' | 'scanning' | 'processing' | 'needs_permission' | 'saved' | 'unverified';
 
 export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
   currentLang,
@@ -48,6 +49,13 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
   const [currentFileName, setCurrentFileName] = useState<string>('');
   const [currentFileSize, setCurrentFileSize] = useState<string>('');
 
+  // Aadhaar Specific Multi-Side State (Front & Back)
+  const [aadhaarFrontUploaded, setAadhaarFrontUploaded] = useState<boolean>(false);
+  const [aadhaarBackUploaded, setAadhaarBackUploaded] = useState<boolean>(false);
+  const [aadhaarFrontDataUrl, setAadhaarFrontDataUrl] = useState<string>('');
+  const [aadhaarBackDataUrl, setAadhaarBackDataUrl] = useState<string>('');
+  const [mergedAadhaarData, setMergedAadhaarData] = useState<OcrExtractedData | null>(null);
+
   const refreshSavedDocs = () => {
     const docs = StorageService.getDocuments();
     const map: Record<string, { fileName: string; fileSize: string; fileDataUrl: string; isVerified: boolean }> = {};
@@ -63,6 +71,15 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       }
     });
     setSavedDocs(map);
+
+    // Hydrate Aadhaar side flags if profile already has fields
+    const profile = StorageService.getProfile();
+    if (profile.name || profile.maskedAadhaar || profile.dob) {
+      setAadhaarFrontUploaded(true);
+    }
+    if (profile.address || profile.district || profile.pincode) {
+      setAadhaarBackUploaded(true);
+    }
   };
 
   useEffect(() => {
@@ -78,7 +95,17 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
   const hasEssentialFields = (data: OcrExtractedData): boolean => {
     if (data.doc_type === 'AADHAAR') {
-      return Boolean(data.name || data.masked_aadhaar);
+      // Back side only gives address fields — those are valid too
+      return Boolean(
+        data.name ||
+        data.masked_aadhaar ||
+        data.address ||
+        data.district ||
+        data.state ||
+        data.pincode ||
+        data.dob ||
+        data.gender
+      );
     }
     if (data.doc_type === 'CASTE') {
       return Boolean(data.category || data.certificate_number);
@@ -87,7 +114,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       return Boolean(data.annual_income || data.certificate_number);
     }
     if (data.doc_type === 'MARKSHEET') {
-      return Boolean(data.marks_percentage || (data.highest_education && data.highest_education !== 'N/A'));
+      return Boolean(data.marks_percentage || (data.highest_education && data.highest_education !== 'N/A') || data.certificate_number);
     }
     return false;
   };
@@ -101,28 +128,97 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     });
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
-    if (!fileList || fileList.length === 0) return;
+  // Merge newly extracted Aadhaar fields into cumulative state
+  const mergeAadhaarFields = (
+    newExtract: OcrExtractedData,
+    sideTarget?: 'FRONT' | 'BACK'
+  ): OcrExtractedData => {
+    const existing = mergedAadhaarData || extractedData || {
+      doc_type: 'AADHAAR',
+      confidence: newExtract.confidence || 85,
+      engine: newExtract.engine || 'RapidOCR_ONNX',
+      is_verified: true,
+    };
 
-    const files = Array.from(fileList);
-    const file = files[0];
-    const sizeStr = `${(file.size / 1024).toFixed(1)} KB`;
+    const merged: OcrExtractedData = {
+      ...existing,
+      doc_type: 'AADHAAR',
+      engine: newExtract.engine || existing.engine || 'RapidOCR_ONNX',
+      confidence: Math.max(existing.confidence || 0, newExtract.confidence || 0),
+      is_verified: true,
+    };
+
+    // If Front side or Front fields are present: extract Name, DOB, Gender, Masked Aadhaar
+    if (sideTarget === 'FRONT' || (sideTarget !== 'BACK' && newExtract.name)) {
+      if (newExtract.name) merged.name = newExtract.name;
+      if (newExtract.dob) merged.dob = newExtract.dob;
+      if (newExtract.gender) merged.gender = newExtract.gender;
+      if (newExtract.masked_aadhaar) merged.masked_aadhaar = newExtract.masked_aadhaar;
+    }
+
+    // If Back side or Back fields are present: extract Address, District, State, Pincode
+    if (sideTarget === 'BACK' || (sideTarget !== 'FRONT' && (newExtract.address || newExtract.district || newExtract.state || newExtract.pincode))) {
+      if (newExtract.address) merged.address = newExtract.address;
+      if (newExtract.district) merged.district = newExtract.district;
+      if (newExtract.state) merged.state = newExtract.state;
+      if (newExtract.pincode) merged.pincode = newExtract.pincode;
+      if (newExtract.masked_aadhaar && !merged.masked_aadhaar) {
+        merged.masked_aadhaar = newExtract.masked_aadhaar;
+      }
+    }
+
+    // If neither explicit sideTarget (e.g. combined photo), take all available fields
+    if (!sideTarget) {
+      if (newExtract.name) merged.name = newExtract.name;
+      if (newExtract.dob) merged.dob = newExtract.dob;
+      if (newExtract.gender) merged.gender = newExtract.gender;
+      if (newExtract.masked_aadhaar) merged.masked_aadhaar = newExtract.masked_aadhaar;
+      if (newExtract.address) merged.address = newExtract.address;
+      if (newExtract.district) merged.district = newExtract.district;
+      if (newExtract.state) merged.state = newExtract.state;
+      if (newExtract.pincode) merged.pincode = newExtract.pincode;
+    }
+
+    setMergedAadhaarData(merged);
+    return merged;
+  };
+
+  // Main file upload handler (handles single, multi, front-specific, and back-specific uploads)
+  const processFiles = async (
+    files: File[],
+    docType: OcrDocType,
+    sideTarget?: 'FRONT' | 'BACK'
+  ) => {
+    if (!files || files.length === 0) return;
+
+    const mainFile = files[0];
+    const sizeStr = `${(mainFile.size / 1024).toFixed(1)} KB`;
 
     setSelectedFileNames(files.map((f) => f.name));
-    setCurrentFileName(file.name);
+    setCurrentFileName(mainFile.name);
     setCurrentFileSize(sizeStr);
     setUploadStatus('scanning');
-    setExtractedData(null);
     setPendingResult(null);
 
-    // Read Data URL immediately so the document preview & file is NEVER lost
     let dataUrl = '';
     try {
-      dataUrl = await readFileAsDataUrl(file);
+      dataUrl = await readFileAsDataUrl(mainFile);
       setCurrentFileDataUrl(dataUrl);
-      // Immediately save to local storage as user-uploaded document
-      StorageService.saveUploadedDocument(activeDocType, dataUrl, file.name, sizeStr);
+
+      if (docType === 'AADHAAR') {
+        if (sideTarget === 'FRONT') {
+          setAadhaarFrontDataUrl(dataUrl);
+          setAadhaarFrontUploaded(true);
+        } else if (sideTarget === 'BACK') {
+          setAadhaarBackDataUrl(dataUrl);
+          setAadhaarBackUploaded(true);
+        } else {
+          setAadhaarFrontDataUrl(dataUrl);
+          setAadhaarFrontUploaded(true);
+        }
+      }
+
+      StorageService.saveUploadedDocument(docType, dataUrl, mainFile.name, sizeStr);
       refreshSavedDocs();
     } catch (readErr) {
       console.warn('Could not read image as data URL:', readErr);
@@ -137,13 +233,9 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     }
 
     try {
-      // Step 1: Run local extraction
-      const result = await ApiService.extractTargetedOcr(files, activeDocType, 'AUTO', false);
+      const result = await ApiService.extractTargetedOcr(files, docType, 'AUTO', false);
+      setUploadStatus('processing');
 
-      // Transition to explicit verification step
-      setUploadStatus('verifying');
-
-      // Check if permission required for cloud fallback
       if (result.needs_permission) {
         setPendingFiles(files);
         setPendingResult(result);
@@ -151,8 +243,8 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         const promptMsg =
           result.prompt_message ||
           (currentLang === 'hi'
-            ? `दस्तावेज़ की स्पष्टता कम (${result.confidence}%) है। क्या आप उच्च सटीकता के लिए Google Gemini Cloud AI का उपयोग करना चाहते हैं?`
-            : `Local OCR scan had low confidence (${result.confidence}%). Would you like to use Google Gemini Cloud AI for high-accuracy extraction?`);
+            ? `दस्तावेज़ की स्पष्टता (${result.confidence}%) है। क्या आप उच्च सटीकता के लिए Google Gemini Cloud AI का उपयोग करना चाहते हैं?`
+            : `Local OCR scan had confidence (${result.confidence}%). Would you like to use Google Gemini Cloud AI for enhanced extraction?`);
         setPermissionPromptMessage(promptMsg);
         if (talkBackActive) {
           speakText(promptMsg, true);
@@ -160,27 +252,35 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         return;
       }
 
-      // Check if verification succeeded
-      const isValid = result.is_verified !== false && hasEssentialFields(result) && result.confidence >= 40;
+      const isValid = hasEssentialFields(result);
 
       if (isValid) {
-        setUploadStatus('verified');
-        setExtractedData(result);
+        let finalData = result;
+        if (docType === 'AADHAAR') {
+          finalData = mergeAadhaarFields(result, sideTarget);
+          if (result.name || result.dob || result.gender) setAadhaarFrontUploaded(true);
+          if (result.address || result.district || result.pincode) setAadhaarBackUploaded(true);
+        }
+
+        setUploadStatus('saved');
+        setExtractedData(finalData);
+
         StorageService.saveUploadedDocument(
-          activeDocType,
+          docType,
           dataUrl || currentFileDataUrl,
-          file.name,
+          mainFile.name,
           sizeStr,
-          result.masked_aadhaar || result.certificate_number,
+          finalData.masked_aadhaar || finalData.certificate_number,
           'RAPIDOCR'
         );
         refreshSavedDocs();
-        onExtractSuccess(result, dataUrl || currentFileDataUrl, file.name);
+        onExtractSuccess(finalData, dataUrl || currentFileDataUrl, mainFile.name);
+
         if (talkBackActive) {
           speakText(
             currentLang === 'hi'
-              ? `दस्तावेज़ सत्यापित हुआ। ${result.name ? 'नाम: ' + result.name : ''} ${result.annual_income ? 'वार्षिक आय: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'वर्ग: ' + result.category : ''}`
-              : `Document verified successfully. ${result.name ? 'Name: ' + result.name : ''} ${result.annual_income ? 'Annual Income: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'Category: ' + result.category : ''}`
+              ? `दस्तावेज़ सहेजा गया। ${finalData.name ? 'नाम: ' + finalData.name : ''} ${finalData.district ? 'ज़िला: ' + finalData.district : ''}`
+              : `Document scanned and saved. ${finalData.name ? 'Name: ' + finalData.name : ''} ${finalData.district ? 'District: ' + finalData.district : ''}`
           );
         }
       } else {
@@ -190,16 +290,9 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         setUnverifiedMessage(
           result.error_message ||
             (currentLang === 'hi'
-              ? 'दस्तावेज़ से स्पष्ट विवरण नहीं पढ़े जा सके। आप इसे फिर भी फ़ॉर्म में संलग्न कर सकते हैं या विवरण मैन्युअल दर्ज कर सकते हैं।'
-              : 'Could not extract high-confidence text from document. You can still attach this document copy or fill details manually.')
+              ? 'दस्तावेज़ से स्पष्ट विवरण नहीं पढ़े जा सके। आप इसे फिर भी फ़ॉर्म में संलग्न कर सकते हैं।'
+              : 'Could not extract text from document. You can still attach it to your dossier.')
         );
-        if (talkBackActive) {
-          speakText(
-            currentLang === 'hi'
-              ? 'दस्तावेज़ का विवरण स्पष्ट नहीं है।'
-              : 'Document text could not be verified with high confidence.'
-          );
-        }
       }
     } catch (err) {
       console.error('OCR Error:', err);
@@ -207,19 +300,34 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       setPendingFiles(files);
       setUnverifiedMessage(
         currentLang === 'hi'
-          ? 'स्कैन प्रक्रिया में तकनीकी समस्या आई। आप यह दस्तावेज़ संलग्न रख सकते हैं या पुनः प्रयास करें।'
-          : 'Technical notice during OCR scan. You can still attach and save this document to your dossier.'
+          ? 'स्कैन में समस्या आई। आप यह दस्तावेज़ सीधे संलग्न कर सकते हैं।'
+          : 'Could not read document. You can still attach it directly to your dossier.'
       );
-      if (talkBackActive) {
-        speakText(
-          currentLang === 'hi'
-            ? 'दस्तावेज़ स्कैन करने में समस्या आई।'
-            : 'Error occurred while scanning document.'
-        );
-      }
-    } finally {
-      e.target.value = '';
     }
+  };
+
+  const handleGeneralFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    await processFiles(files, activeDocType);
+    e.target.value = '';
+  };
+
+  const handleFrontSideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    await processFiles(files, 'AADHAAR', 'FRONT');
+    e.target.value = '';
+  };
+
+  const handleBackSideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    await processFiles(files, 'AADHAAR', 'BACK');
+    e.target.value = '';
   };
 
   const handleAcceptGemini = async () => {
@@ -229,43 +337,42 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     if (talkBackActive) {
       speakText(
         currentLang === 'hi'
-          ? 'Google Gemini Cloud AI द्वारा उच्च सटीकता स्कैन किया जा रहा है।'
-          : 'Scanning with Google Gemini Cloud AI for high-accuracy extraction.'
+          ? 'Google Gemini Cloud AI द्वारा स्कैन किया जा रहा है।'
+          : 'Scanning with Google Gemini Cloud AI for enhanced extraction.'
       );
     }
 
     try {
       const result = await ApiService.extractTargetedOcr(pendingFiles, activeDocType, 'AUTO', true);
-      setUploadStatus('verifying');
 
-      const isValid = result.is_verified !== false && hasEssentialFields(result);
+      const isValid = hasEssentialFields(result);
 
       if (isValid) {
-        setUploadStatus('verified');
-        setExtractedData(result);
+        let finalData = result;
+        if (activeDocType === 'AADHAAR') {
+          finalData = mergeAadhaarFields(result);
+          if (result.name || result.dob || result.gender) setAadhaarFrontUploaded(true);
+          if (result.address || result.district || result.pincode) setAadhaarBackUploaded(true);
+        }
+
+        setUploadStatus('saved');
+        setExtractedData(finalData);
         StorageService.saveUploadedDocument(
           activeDocType,
           currentFileDataUrl,
           currentFileName || pendingFiles[0]?.name || `${activeDocType}_Doc.jpg`,
           currentFileSize || 'Attached',
-          result.masked_aadhaar || result.certificate_number,
+          finalData.masked_aadhaar || finalData.certificate_number,
           'GEMINI'
         );
         refreshSavedDocs();
-        onExtractSuccess(result, currentFileDataUrl, currentFileName);
-        if (talkBackActive) {
-          speakText(
-            currentLang === 'hi'
-              ? `Gemini AI द्वारा दस्तावेज़ सत्यापित हुआ। ${result.name ? 'नाम: ' + result.name : ''} ${result.annual_income ? 'वार्षिक आय: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'वर्ग: ' + result.category : ''}`
-              : `Document verified with Gemini Cloud AI. ${result.name ? 'Name: ' + result.name : ''} ${result.annual_income ? 'Annual Income: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'Category: ' + result.category : ''}`
-          );
-        }
+        onExtractSuccess(finalData, currentFileDataUrl, currentFileName);
       } else {
         setUploadStatus('unverified');
         setUnverifiedMessage(
           currentLang === 'hi'
-            ? 'Cloud AI भी आवश्यक विवरण नहीं पढ़ सका। आप यह दस्तावेज़ संलग्न रख सकते हैं।'
-            : 'Cloud AI could not read all required details. You can still attach and save this document.'
+            ? 'Cloud AI भी विवरण नहीं पढ़ सका। आप यह दस्तावेज़ संलग्न कर सकते हैं।'
+            : 'Cloud AI could not read details. You can still attach and save this document.'
         );
       }
     } catch (err) {
@@ -279,38 +386,31 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
   const handleDeclineGemini = () => {
     if (pendingResult && hasEssentialFields(pendingResult)) {
-      setUploadStatus('verified');
-      setExtractedData(pendingResult);
+      const finalData = activeDocType === 'AADHAAR' ? mergeAadhaarFields(pendingResult) : pendingResult;
+      setUploadStatus('saved');
+      setExtractedData(finalData);
       StorageService.saveUploadedDocument(
         activeDocType,
         currentFileDataUrl,
         currentFileName,
         currentFileSize || 'Attached',
-        pendingResult.masked_aadhaar || pendingResult.certificate_number,
+        finalData.masked_aadhaar || finalData.certificate_number,
         'RAPIDOCR'
       );
       refreshSavedDocs();
-      onExtractSuccess(pendingResult, currentFileDataUrl, currentFileName);
-      if (talkBackActive) {
-        speakText(
-          currentLang === 'hi'
-            ? 'स्थानीय स्कैन डेटा का उपयोग किया जा रहा है।'
-            : 'Using local scan data.'
-        );
-      }
+      onExtractSuccess(finalData, currentFileDataUrl, currentFileName);
     } else {
       setUploadStatus('unverified');
       setUnverifiedMessage(
         currentLang === 'hi'
-          ? 'दस्तावेज़ सत्यापित नहीं हुआ। आप इसे संलग्न कर सकते हैं या मैन्युअल भरें।'
-          : 'Document was not verified. You can attach it anyway or fill details manually below.'
+          ? 'दस्तावेज़ से विवरण नहीं पढ़े जा सके। आप इसे संलग्न कर सकते हैं।'
+          : 'Could not extract details. You can attach it directly or fill manually below.'
       );
     }
   };
 
-  // Allow attaching the uploaded document even when OCR confidence is low or manual
   const handleForceAttach = () => {
-    const attachedData: OcrExtractedData = pendingResult || {
+    const attachedData: OcrExtractedData = pendingResult || extractedData || {
       doc_type: activeDocType,
       confidence: 65,
       engine: 'RapidOCR_ONNX',
@@ -327,7 +427,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       'RAPIDOCR'
     );
     refreshSavedDocs();
-    setUploadStatus('verified');
+    setUploadStatus('saved');
     setExtractedData(attachedData);
     onExtractSuccess(attachedData, currentFileDataUrl, currentFileName || `${activeDocType}_Attached.jpg`);
 
@@ -360,13 +460,13 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
             {currentLang === 'hi'
-              ? 'प्रमाण पत्र या पहचान पत्र का फोटो अपलोड करें — सत्यापन के बाद ही विवरण भरे जाएंगे'
-              : 'Upload certificate or ID photo — verified locally with UIDAI masking before auto-filling'}
+              ? 'आधार (आगे/पीछे), जाति, आय या अंकतालिका अपलोड करें — नाम आगे से और पता पीछे से स्वतः निकाला जाएगा'
+              : 'Upload Aadhaar (Front/Back), Caste, Income, or Marksheet — Name from front and Address from back extracted accurately'}
           </p>
         </div>
       </div>
 
-      {/* Scoped Document Tabs (User-Centric Sizing) */}
+      {/* Scoped Document Tabs */}
       <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100" role="tablist" aria-label="Document Type Selection">
         {docTabs.map((tab) => {
           const isActive = activeDocType === tab.type;
@@ -436,15 +536,118 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         </div>
       )}
 
-      {/* Upload Zone / Verification Card */}
-      {uploadStatus === 'idle' && (
+      {/* AADHAAR CARD DUAL UPLOAD INTERFACE (FRONT & BACK OR COMBINED) */}
+      {activeDocType === 'AADHAAR' && uploadStatus === 'idle' && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* FRONT SIDE PHOTO CARD */}
+            <div className="relative border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-xl p-4 bg-slate-50/70 hover:bg-indigo-50/30 transition text-center group cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                onChange={handleFrontSideUpload}
+                aria-label="Upload Aadhaar Front Photo"
+              />
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <p className="font-bold text-slate-900 text-xs">
+                      {currentLang === 'hi' ? '1. आगे का भाग (Front Photo)' : '1. Front Side Photo'}
+                    </p>
+                    {aadhaarFrontUploaded && (
+                      <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.2 rounded border border-indigo-200">
+                        ✓ Scanned
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
+                    {currentLang === 'hi'
+                      ? 'नाम, जन्म तिथि, लिंग एवं आधार नंबर हेतु'
+                      : 'Extracts Name, DOB, Gender & Aadhaar No.'}
+                  </p>
+                </div>
+                <span className="mt-1 h-7 px-3 rounded-lg bg-indigo-950 text-white text-[11px] font-semibold flex items-center gap-1.5 pointer-events-none">
+                  <Upload className="w-3 h-3 text-orange-400" />
+                  <span>{aadhaarFrontUploaded ? (currentLang === 'hi' ? 'फ़ोटो बदलें' : 'Replace Front') : (currentLang === 'hi' ? 'आगे की फ़ोटो चुनें' : 'Upload Front')}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* BACK SIDE PHOTO CARD */}
+            <div className="relative border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-xl p-4 bg-slate-50/70 hover:bg-indigo-50/30 transition text-center group cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                onChange={handleBackSideUpload}
+                aria-label="Upload Aadhaar Back Photo"
+              />
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <p className="font-bold text-slate-900 text-xs">
+                      {currentLang === 'hi' ? '2. पीछे का भाग (Back Photo)' : '2. Back Side Photo'}
+                    </p>
+                    {aadhaarBackUploaded && (
+                      <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.2 rounded border border-indigo-200">
+                        ✓ Scanned
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
+                    {currentLang === 'hi'
+                      ? 'स्थायी पता, ज़िला, राज्य एवं पिनकोड हेतु'
+                      : 'Extracts Address, District, State & Pincode'}
+                  </p>
+                </div>
+                <span className="mt-1 h-7 px-3 rounded-lg bg-indigo-950 text-white text-[11px] font-semibold flex items-center gap-1.5 pointer-events-none">
+                  <Upload className="w-3 h-3 text-orange-400" />
+                  <span>{aadhaarBackUploaded ? (currentLang === 'hi' ? 'फ़ोटो बदलें' : 'Replace Back') : (currentLang === 'hi' ? 'पीछे की फ़ोटो चुनें' : 'Upload Back')}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* SINGLE / COMBINED PHOTO FALLBACK BAR */}
+          <div className="relative border border-dashed border-slate-300 hover:border-indigo-400 rounded-xl p-2.5 bg-slate-50 flex items-center justify-between gap-3 text-xs text-slate-600 transition group cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="absolute inset-0 opacity-0 cursor-pointer z-10"
+              onChange={handleGeneralFileUpload}
+              aria-label="Upload Combined or Both Photos at Once"
+            />
+            <div className="flex items-center gap-2 min-w-0">
+              <ImageIcon className="w-4 h-4 text-indigo-700 flex-shrink-0" />
+              <span className="truncate text-[11px] font-medium text-slate-700">
+                {currentLang === 'hi'
+                  ? 'या एक ही फ़ोटो में आगे-पीछे दोनों हों (e-Aadhaar / Xerox) तो यहाँ चुनें'
+                  : 'Or upload a single photo containing both sides (e-Aadhaar / Xerox / 2 files)'}
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-indigo-950 bg-indigo-100/80 px-2.5 py-1 rounded-lg border border-indigo-200 flex-shrink-0 group-hover:bg-indigo-200 transition">
+              {currentLang === 'hi' ? 'संयुक्त फ़ोटो चुनें' : 'Choose Combined'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* STANDARD UPLOAD ZONE FOR CASTE, INCOME, MARKSHEET */}
+      {activeDocType !== 'AADHAAR' && uploadStatus === 'idle' && (
         <div className="border border-dashed border-indigo-200 hover:border-indigo-400 rounded-xl p-4 sm:p-5 text-center bg-slate-50/70 hover:bg-indigo-50/30 transition-all cursor-pointer relative group">
           <input
             type="file"
             accept="image/*"
-            multiple={activeDocType === 'AADHAAR'}
             className="absolute inset-0 opacity-0 cursor-pointer z-10"
-            onChange={handleFileUpload}
+            onChange={handleGeneralFileUpload}
             aria-label="Upload document image"
           />
 
@@ -455,11 +658,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
             <div>
               <p className="font-bold text-slate-900 text-sm">
-                {activeDocType === 'AADHAAR'
-                  ? currentLang === 'hi'
-                    ? 'आधार कार्ड फ़ोटो चुनें (आगे और पीछे का फ़ोटो)'
-                    : 'Select Aadhaar Photo (Front & Back supported)'
-                  : currentLang === 'hi'
+                {currentLang === 'hi'
                   ? `${docTabs.find((d) => d.type === activeDocType)?.nameHi} की फ़ोटो चुनें`
                   : `Select photo of ${docTabs.find((d) => d.type === activeDocType)?.nameEn}`}
               </p>
@@ -499,22 +698,22 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         </div>
       )}
 
-      {/* Verifying State */}
-      {uploadStatus === 'verifying' && (
-        <div className="border border-amber-200 rounded-xl p-4 text-center bg-amber-50/50 flex flex-col items-center justify-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
-          <p className="font-bold text-sm text-amber-950">
+      {/* Processing State */}
+      {uploadStatus === 'processing' && (
+        <div className="border border-indigo-200 rounded-xl p-4 text-center bg-indigo-50/50 flex flex-col items-center justify-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+          <p className="font-bold text-sm text-indigo-950">
             {currentLang === 'hi'
-              ? 'विवरण का सत्यापन किया जा रहा है...'
-              : 'Verifying Document Authenticity & Fields...'}
+              ? 'डेटा प्रोसेस हो रहा है...'
+              : 'Processing extracted data...'}
           </p>
           <span className="text-xs text-slate-500">
-            Checking UIDAI pattern, certificate authenticity, and confidence score
+            Organising fields from document
           </span>
         </div>
       )}
 
-      {/* Cloud AI Consent State (Waiting for user decision) */}
+      {/* Cloud AI Consent State */}
       {uploadStatus === 'needs_permission' && (
         <div
           role="alert"
@@ -573,14 +772,14 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         </div>
       )}
 
-      {/* Unverified / Error State (Truthful feedback with direct option to attach anyway) */}
+      {/* Attach Error / Low Confidence State */}
       {uploadStatus === 'unverified' && (
         <div className="border border-rose-200 bg-rose-50/60 rounded-xl p-4 space-y-3 animate-fadeIn">
           <div className="flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-xs text-rose-950">
-                {currentLang === 'hi' ? 'दस्तावेज़ सत्यापन सूचना' : 'Document Verification Notice'}
+                {currentLang === 'hi' ? 'स्कैन नोटिस' : 'Scan Notice'}
               </p>
               <p className="text-xs text-rose-800 mt-0.5 leading-relaxed">
                 {unverifiedMessage}
@@ -624,8 +823,8 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         </div>
       )}
 
-      {/* Verified Success State (ONLY shown when actually verified) */}
-      {uploadStatus === 'verified' && extractedData && (
+      {/* Saved / Success State */}
+      {uploadStatus === 'saved' && extractedData && (
         <div className="border border-emerald-200 bg-emerald-50/70 rounded-xl p-4 space-y-3 animate-fadeIn">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -634,12 +833,26 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
               </span>
               <div>
                 <p className="font-bold text-sm text-emerald-950">
-                  {currentLang === 'hi' ? 'दस्तावेज़ सफलतापूर्वक सत्यापित हुआ!' : 'Document Verified & Parsed!'}
+                  {extractedData.doc_type === 'AADHAAR'
+                    ? aadhaarFrontUploaded && aadhaarBackUploaded
+                      ? currentLang === 'hi'
+                        ? 'आधार कार्ड (आगे और पीछे) स्कैन व सहेजा गया!'
+                        : 'Aadhaar (Front & Back) Scanned & Saved!'
+                      : extractedData.address
+                      ? currentLang === 'hi'
+                        ? 'आधार पीछे का भाग स्कैन हुआ (पता निकाला गया)!'
+                        : 'Aadhaar Back Scanned (Address Extracted)!'
+                      : currentLang === 'hi'
+                      ? 'आधार आगे का भाग स्कैन हुआ (नाम एवं जन्म तिथि निकाली गई)!'
+                      : 'Aadhaar Front Scanned (Name & DOB Extracted)!'
+                    : currentLang === 'hi'
+                    ? 'दस्तावेज़ स्कैन व सहेजा गया!'
+                    : 'Document Scanned & Saved!'}
                 </p>
                 <p className="text-[11px] text-emerald-800">
                   {currentLang === 'hi'
-                    ? 'विवरण नीचे फ़ॉर्म में भर दिए गए हैं।'
-                    : 'Details successfully verified and populated in the form below.'}
+                    ? 'निकाले गए विवरण नीचे फ़ॉर्म में भर दिए गए हैं।'
+                    : 'Extracted fields populated in the citizen profile below.'}
                 </p>
               </div>
             </div>
@@ -649,7 +862,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
               onClick={handleResetUpload}
               className="h-8 px-3 rounded-lg text-xs font-semibold bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 transition self-start sm:self-auto cursor-pointer"
             >
-              {currentLang === 'hi' ? 'नया दस्तावेज़ अपलोड करें' : 'Upload Another'}
+              {currentLang === 'hi' ? 'नया दस्तावेज़ / दूसरा भाग अपलोड करें' : 'Upload Another / Other Side'}
             </button>
           </div>
 
@@ -664,7 +877,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
 
             {extractedData.name && (
               <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
-                {extractedData.name}
+                Name: {extractedData.name}
               </span>
             )}
 
@@ -680,6 +893,18 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
               </span>
             )}
 
+            {extractedData.state && (
+              <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                State: {extractedData.state}
+              </span>
+            )}
+
+            {extractedData.pincode && (
+              <span className="font-mono font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                Pin: {extractedData.pincode}
+              </span>
+            )}
+
             {extractedData.category && (
               <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
                 {extractedData.category}
@@ -689,6 +914,12 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
             {extractedData.dob && (
               <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
                 DOB: {extractedData.dob}
+              </span>
+            )}
+
+            {extractedData.gender && (
+              <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                {extractedData.gender}
               </span>
             )}
 
@@ -728,4 +959,3 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
     </div>
   );
 };
-

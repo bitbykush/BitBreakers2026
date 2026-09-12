@@ -123,28 +123,90 @@ html.a11y-dyslexia body {
 
 /* Common Application Format (CAF) A4 Print Styles */
 @media print {
-  body {
-    background: white !important;
-    color: black !important;
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 12mm 12mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    box-sizing: border-box !important;
   }
   
-  .no-print {
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+  
+  .no-print, .no-print * {
     display: none !important;
   }
   
-  #print-dossier, #print-dossier * {
-    visibility: visible !important;
+  /* Reset modal/fixed overlays to allow seamless multi-page document flow */
+  .fixed, .overflow-y-auto, .overflow-hidden {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
   }
-  
+
   #print-dossier {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: static !important;
     width: 100% !important;
-    background: white !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
+    border-radius: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
+    overflow: visible !important;
+    visibility: visible !important;
+  }
+
+  #print-dossier * {
+    visibility: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  tr, td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  .page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
   }
 }
+

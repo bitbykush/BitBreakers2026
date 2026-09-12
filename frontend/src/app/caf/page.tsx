@@ -8,6 +8,7 @@ import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { MOCK_SCHEMES } from '@/lib/mockData';
 import { ApplicantProfile, SchemeMatch } from '@/types';
 import { Printer, ArrowLeft } from 'lucide-react';
+import { printDossier } from '@/lib/printHelper';
 
 export default function CafPage() {
   const router = useRouter();
@@ -43,15 +44,15 @@ export default function CafPage() {
           <button
             type="button"
             onClick={() => router.push('/')}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-950 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-950 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> Return to Platform
           </button>
 
           <button
             type="button"
-            onClick={() => window.print()}
-            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md transition flex items-center gap-2 active:scale-95"
+            onClick={() => printDossier('print-dossier', 'CAF_Official_A4_Dossier')}
+            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md transition flex items-center gap-2 active:scale-95 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Print Official A4 Dossier</span>
@@ -84,8 +85,8 @@ export default function CafPage() {
               <p className="text-slate-500">
                 Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
               </p>
-              <span className="inline-block mt-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-300">
-                ✓ e-KYC Verified
+              <span className="inline-block mt-1 bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-200">
+                📋 OCR Collected
               </span>
             </div>
           </div>
@@ -113,15 +114,15 @@ export default function CafPage() {
                 </tr>
                 <tr className="border-b border-slate-200">
                   <td className="p-2 font-bold bg-slate-50">Certified Annual Income:</td>
-                  <td className="p-2 font-semibold">{profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year (Revenue Verified)` : 'Not Declared'}</td>
+                  <td className="p-2 font-semibold">{profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year` : 'Not Declared'}</td>
                   <td className="p-2 font-bold bg-slate-50">Location Classification:</td>
                   <td className="p-2 font-semibold text-orange-700">{profile.areaType || 'Rural'} Gram Panchayat ({profile.district || 'District'}, {profile.state || 'State'})</td>
                 </tr>
                 <tr>
                   <td className="p-2 font-bold bg-slate-50">Education & Course:</td>
                   <td className="p-2 font-semibold">{profile.education || 'N/A'}</td>
-                  <td className="p-2 font-bold bg-slate-50">Statutory Verification:</td>
-                  <td className="p-2 text-emerald-700 font-mono font-semibold">✓ Verified (UIDAI & State Revenue)</td>
+                  <td className="p-2 font-bold bg-slate-50">Document Status:</td>
+                  <td className="p-2 text-indigo-700 font-mono font-semibold">📋 OCR Data Collected</td>
                 </tr>
               </tbody>
             </table>
@@ -175,23 +176,23 @@ export default function CafPage() {
             </table>
           </div>
 
-          {/* Section 3: Verification & Digital Attestation Matrix */}
+          {/* Section 3: Document Collection Status Matrix */}
           <div className="space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider bg-slate-100 px-3 py-1 text-slate-800 border-l-4 border-indigo-950">
-              3. Verification & Digital Attestation Matrix
+              3. Document Collection Status
             </h3>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
-                <span>Aadhaar Masked eKYC</span>
-                <span className="text-emerald-700 font-bold font-mono">✓ PASS (UIDAI Vault)</span>
+                <span>Aadhaar Identity Card</span>
+                <span className="text-indigo-700 font-bold font-mono">📎 Scan Collected</span>
               </div>
               <div className="border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
                 <span>{profile.category} Caste Certificate</span>
-                <span className="text-emerald-700 font-bold font-mono">✓ PASS (State Revenue Board)</span>
+                <span className="text-indigo-700 font-bold font-mono">📎 Scan Collected</span>
               </div>
               <div className="border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
-                <span>Income Certificate Verification</span>
-                <span className="text-emerald-700 font-bold font-mono">✓ PASS (State Revenue Board)</span>
+                <span>Income Certificate</span>
+                <span className="text-indigo-700 font-bold font-mono">📎 Scan Collected</span>
               </div>
               <div className="border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
                 <span>Udyam Assist Registration</span>

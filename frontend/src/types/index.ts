@@ -18,6 +18,8 @@ export interface ApplicantProfile {
   profession: string;
   professionHi?: string;
   requiredCapital: number;
+  address?: string;
+  pincode?: string;
   maskedAadhaar?: string;
   casteCertificateNo?: string;
   incomeCertificateNo?: string;

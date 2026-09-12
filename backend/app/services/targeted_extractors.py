@@ -458,6 +458,31 @@ class TargetedDocumentExtractor:
                 if data["pincode"] and data["pincode"] not in clean_addr:
                     clean_addr += f" - {data['pincode']}"
                 data["address"] = clean_addr
+        elif b_lines:
+            # Fallback when "ADDRESS" keyword is missing in OCR output but back lines exist
+            filtered_addr_lines = []
+            for bl in b_lines:
+                bu = bl.upper()
+                if any(noise in bu for noise in ["UIDAI", "1947", "HELP@", "WWW.", "MERA AADHAAR", "MERI PEHCHAN", "AUTHORITY OF INDIA", "UNIQUE IDENTIFICATION"]):
+                    continue
+                # Skip pure 12-digit number or VID if present
+                if re.fullmatch(r'[\d\s]{12,19}', bl.strip()):
+                    continue
+                filtered_addr_lines.append(bl.strip())
+            if filtered_addr_lines:
+                cand_addr = ", ".join(filtered_addr_lines)
+                cand_addr = re.sub(r'[\s,-]+$', '', cand_addr).strip()
+                cand_addr = " ".join(cand_addr.split())
+                if len(cand_addr) > 5:
+                    if data["pincode"] and data["pincode"] not in cand_addr:
+                        cand_addr += f" - {data['pincode']}"
+                    data["address"] = cand_addr
+
+        # Fallback district from address if not matched yet
+        if not data["district"] and data["address"]:
+            d_match = re.search(r'(?:Dist|District|Dist\.)[:\s\-]*([A-Za-z]+)', data["address"], re.IGNORECASE)
+            if d_match and d_match.group(1).upper() not in ["OF", "THE", "INDIA"]:
+                data["district"] = d_match.group(1).strip().title()
 
         return data
 

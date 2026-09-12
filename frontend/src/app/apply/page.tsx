@@ -52,6 +52,8 @@ export default function ApplyPage() {
     if (extracted.highest_education) patch.education = extracted.highest_education;
     if (extracted.state) patch.state = extracted.state;
     if (extracted.district) patch.district = extracted.district;
+    if (extracted.address) patch.address = extracted.address;
+    if (extracted.pincode) patch.pincode = extracted.pincode;
 
     const updated = StorageService.saveProfile(patch);
     setProfile(updated);
@@ -122,7 +124,7 @@ export default function ApplyPage() {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
           <h4 className="font-bold text-indigo-950 text-base pb-3 border-b border-slate-100 flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-orange-500" />
-            Verified Applicant Details (आवेदक विवरण)
+            Applicant Details (आवेदक विवरण)
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
