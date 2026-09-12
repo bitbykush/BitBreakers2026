@@ -12,7 +12,6 @@ interface HeaderProps {
   isLargerFont?: boolean;
   onToggleFont?: () => void;
   onTripleTapLogo?: () => void;
-  onReplayIntro?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,7 +20,6 @@ export const Header: React.FC<HeaderProps> = ({
   isLargerFont,
   onToggleFont,
   onTripleTapLogo,
-  onReplayIntro,
 }) => {
   const { setIsA11yMenuOpen } = useAccessibility();
   return (
@@ -80,20 +78,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Right Controls: 3D Intro Replay, Accessibility & Lang Switcher */}
+          {/* Right Controls: Accessibility & Lang Switcher */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
-            {/* 3D Intro Replay Button */}
-            {onReplayIntro && (
-              <button
-                type="button"
-                onClick={onReplayIntro}
-                className="h-8 px-2 sm:px-2.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
-                title={currentLang === 'hi' ? '3D राष्ट्रीय मुद्रा एनीमेशन पुनः देखें' : 'Replay 3D National Seal Intro'}
-              >
-                <span className="text-sm">🪙</span>
-                <span className="hidden sm:inline">{currentLang === 'hi' ? '3D एनीमेशन' : '3D Intro'}</span>
-              </button>
-            )}
 
             {/* Single Unified Accessibility Button */}
             <button

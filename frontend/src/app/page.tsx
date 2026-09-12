@@ -302,7 +302,6 @@ export default function Home() {
         isLargerFont={isLargerFont}
         onToggleFont={handleToggleFont}
         onTripleTapLogo={handleTripleTap}
-        onReplayIntro={() => setPlay3DIntro(true)}
       />
 
       {/* Main Container */}
