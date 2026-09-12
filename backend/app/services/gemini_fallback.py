@@ -145,8 +145,14 @@ MANDATORY RULES:
    - "financial_year": assessment or financial year (e.g. '2024-2025') or null.
    - "certificate_number": Serial or reference number or null.
 6. For MARKSHEET:
-   - "marks_percentage": numeric marks percentage (e.g. 78.4) or null.
+   - "marks_percentage": numeric marks percentage (e.g. 78.4) or null. If no single overall percentage is printed (common in CBSE/State Boards), compute the percentage by averaging the subject marks (or total marks divided by max marks * 100).
    - "highest_education": 10th | 12th | ITI | Graduate | PostGraduate or null.
+     CRITICAL: Secondary School / High School / Matric / Class X is 10th.
+     Senior Secondary / Higher Secondary / Intermediate / Class XII is 12th.
+     Do NOT classify Secondary as 12th unless it explicitly contains 'Senior', 'Higher', 'Intermediate', or 'XII'.
+   - "name": Student / candidate name. Ensure clean spacing between first, middle, and surname.
+   - "dob": Date of birth in DD/MM/YYYY format if present.
+   - "certificate_number": Roll number or certificate/registration number.
 
 Example JSON output:
 {{

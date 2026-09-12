@@ -202,7 +202,7 @@ class ScopedOCREngine:
             # Threshold is 65% (0.65) or if critical fields could not be parsed
             has_essential_field = any(
                 extracted.get(k)
-                for k in ["name", "masked_aadhaar", "category", "annual_income", "marks_percentage"]
+                for k in ["name", "masked_aadhaar", "category", "annual_income", "marks_percentage", "highest_education"]
             )
             is_low_confidence = (overall_confidence < 0.65) or (len(text_lines) == 0) or (not has_essential_field)
 
