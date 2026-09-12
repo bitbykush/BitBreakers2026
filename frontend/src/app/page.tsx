@@ -135,11 +135,11 @@ export default function Home() {
     });
     setProfile(updated);
 
+    const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
     if (trimmed.length > 1) {
-      const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
       ApiService.matchSchemes(updated, verifiedDocs).then(setSchemes);
-    } else {
-      setSchemes([]);
+    } else if (trimmed.length === 0) {
+      ApiService.matchSchemes({ ...updated, profession: '' }, verifiedDocs).then(setSchemes);
     }
   };
 
@@ -295,27 +295,31 @@ export default function Home() {
               onSearchChange={handleSearchTrade}
             />
 
-            {/* Instant Baseline Match Preview - Only visible when user searches or clicks trade */}
-            {hasSearchedOrSelectedTrade && (
-              <div className="animate-fadeIn">
-                <BaselineMatchPreview
-                  currentLang={currentLang}
-                  selectedTradeName={`${profile.profession} (${profile.professionHi || 'कुम्हार'})`}
-                  schemes={schemes}
-                  onFillCustomDetails={handleSwitchToPathway2}
-                  onOpenCompare={(scheme) => {
-                    setSelectedSchemeForCompare(scheme);
-                    setIsCompareOpen(true);
-                  }}
-                  onOpenFinancialAnalysis={handleOpenFinancialAnalysis}
-                  onSwitchToPathway2={handleSwitchToPathway2}
-                  onOpenCaf={(scheme) => {
-                    setSelectedSchemeForCaf(scheme);
-                    setIsCafModalOpen(true);
-                  }}
-                />
-              </div>
-            )}
+            {/* Instant Baseline Match Preview - Always visible on Pathway 1 */}
+            <div className="animate-fadeIn">
+              <BaselineMatchPreview
+                currentLang={currentLang}
+                selectedTradeName={
+                  profile.profession && profile.profession.trim().length > 0
+                    ? `${profile.profession} (${profile.professionHi || ''})`
+                    : currentLang === 'hi'
+                    ? 'सभी लोकप्रिय सरकारी योजनाएं (All Priority Welfare Schemes)'
+                    : 'All Priority Welfare Schemes (सभी लोकप्रिय सरकारी योजनाएं)'
+                }
+                schemes={schemes}
+                onFillCustomDetails={handleSwitchToPathway2}
+                onOpenCompare={(scheme) => {
+                  setSelectedSchemeForCompare(scheme);
+                  setIsCompareOpen(true);
+                }}
+                onOpenFinancialAnalysis={handleOpenFinancialAnalysis}
+                onSwitchToPathway2={handleSwitchToPathway2}
+                onOpenCaf={(scheme) => {
+                  setSelectedSchemeForCaf(scheme);
+                  setIsCafModalOpen(true);
+                }}
+              />
+            </div>
           </section>
         )}
 
