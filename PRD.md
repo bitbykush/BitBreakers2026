@@ -50,7 +50,7 @@ Scheme Seva Kendra (योजना सेवा केंद्र) bridges the
    │ • All fields editable + Targeted Document Extraction   │
    │ • Scheme Compatibility Score (0 - 100%)                │
    │ • Scheme-Specific Document Missing List                │
-   │ • DigiLocker Sandbox eKYC Authentication               │
+   │ • Direct Document Upload & Attachment                  │
    │ • Common Application Format (CAF) A4 Print Dossier     │
    └────────────────────────────────────────────────────────┘
 ```
@@ -87,7 +87,7 @@ To maximize accuracy, eliminate false positives, and protect CPU/RAM budgets, do
 | **Marksheet / Educational Certificate** | `highest_education` (`10th`, `12th`, `ITI`, `Graduate`, `PostGraduate`), `name`, `dob`, `certificate_number` | Caste, Income, Aadhaar, fragile marks math | Regex qualification boundary parser supporting diverse CBSE, ICSE, UP, Bihar & State Boards; marks calculation removed to prevent format variance blockers |
 
 ### "Don't Ask Twice" Document Memory
-Any document parsed or uploaded is cached in the session document registry. When schemes display their eligibility checklist, previously uploaded documents are automatically flagged as `VERIFIED & ATTACHED`.
+Any document parsed or uploaded is cached in the session document registry. When schemes display their eligibility checklist, previously uploaded documents are automatically flagged as `ATTACHED`.
 
 ---
 
@@ -100,9 +100,9 @@ Any document parsed or uploaded is cached in the session document registry. When
 
 ---
 
-## 5. Common Application Format (CAF) & DigiLocker eKYC Sandbox
-- **Official Common Application Format (CAF):** A standardized, single-page printable government application format (`@media print` CSS layout). Contains applicant particulars, masked Aadhaar, target scheme subsidy breakdown (Grant % vs Loan % vs Margin %), and document verification status.
-- **DigiLocker Sandbox:** Interactive modal that simulates OTP eKYC verification (`123456`), branding the CAF with a verified badge: `✓ DigiLocker eKYC Authenticated (Ref: DL-2026-X8921)`.
+## 5. Common Application Format (CAF) & Pure Document Upload
+- **Official Common Application Format (CAF):** A standardized, single-page printable government application format (`@media print` CSS layout). Contains applicant particulars, masked Aadhaar, target scheme subsidy breakdown (Grant % vs Loan % vs Margin %), and attached document dossier.
+- **Pure Document Upload:** Direct one-click document attachment without third-party dependencies. Documents not uploaded appear in yellow and turn green immediately upon file selection.
 
 ---
 
@@ -111,7 +111,6 @@ Any document parsed or uploaded is cached in the session document registry. When
 - Controls:
   - Toggle OCR Engine: `[RapidOCR ONNX (Local)]` | `[Gemini 1.5 Flash (Cloud Fallback)]` | `[Mock Data]`.
   - Toggle Embedding Engine: `[FastEmbed ONNX (Local)]` | `[Mock Vectors]`.
-  - Toggle DigiLocker Mode: `[Interactive Sandbox OTP]` | `[Auto-Bypass]`.
   - Real-time Server Telemetry: Polling `/api/v1/dev/health` to display live server RSS memory (e.g. `230MB / 512MB`).
 
 ---

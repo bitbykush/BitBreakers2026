@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Upload,
   CheckCircle2,
+  Check,
   Loader2,
   Sparkles,
   AlertCircle,
@@ -536,106 +537,62 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         </div>
       )}
 
-      {/* AADHAAR CARD DUAL UPLOAD INTERFACE (FRONT & BACK OR COMBINED) */}
+      {/* AADHAAR CARD COMBINED / MULTI-IMAGE UPLOAD ZONE */}
       {activeDocType === 'AADHAAR' && uploadStatus === 'idle' && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* FRONT SIDE PHOTO CARD */}
-            <div className="relative border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-xl p-4 bg-slate-50/70 hover:bg-indigo-50/30 transition text-center group cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                onChange={handleFrontSideUpload}
-                aria-label="Upload Aadhaar Front Photo"
-              />
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1.5">
-                    <p className="font-bold text-slate-900 text-xs">
-                      {currentLang === 'hi' ? '1. आगे का भाग (Front Photo)' : '1. Front Side Photo'}
-                    </p>
-                    {aadhaarFrontUploaded && (
-                      <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.2 rounded border border-indigo-200">
-                        ✓ Scanned
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
-                    {currentLang === 'hi'
-                      ? 'नाम, जन्म तिथि, लिंग एवं आधार नंबर हेतु'
-                      : 'Extracts Name, DOB, Gender & Aadhaar No.'}
-                  </p>
-                </div>
-                <span className="mt-1 h-7 px-3 rounded-lg bg-indigo-950 text-white text-[11px] font-semibold flex items-center gap-1.5 pointer-events-none">
-                  <Upload className="w-3 h-3 text-orange-400" />
-                  <span>{aadhaarFrontUploaded ? (currentLang === 'hi' ? 'फ़ोटो बदलें' : 'Replace Front') : (currentLang === 'hi' ? 'आगे की फ़ोटो चुनें' : 'Upload Front')}</span>
-                </span>
-              </div>
+        <div className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-2xl p-5 sm:p-6 text-center bg-slate-50/70 hover:bg-indigo-50/30 transition-all cursor-pointer relative group">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+            onChange={handleGeneralFileUpload}
+            aria-label="Upload Aadhaar Card (1 Combined Image or 2 Images)"
+          />
+
+          <div className="flex flex-col items-center justify-center gap-2.5 py-1">
+            <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+              <CreditCard className="w-6 h-6" />
             </div>
 
-            {/* BACK SIDE PHOTO CARD */}
-            <div className="relative border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-xl p-4 bg-slate-50/70 hover:bg-indigo-50/30 transition text-center group cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                onChange={handleBackSideUpload}
-                aria-label="Upload Aadhaar Back Photo"
-              />
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1.5">
-                    <p className="font-bold text-slate-900 text-xs">
-                      {currentLang === 'hi' ? '2. पीछे का भाग (Back Photo)' : '2. Back Side Photo'}
-                    </p>
-                    {aadhaarBackUploaded && (
-                      <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.2 rounded border border-indigo-200">
-                        ✓ Scanned
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
-                    {currentLang === 'hi'
-                      ? 'स्थायी पता, ज़िला, राज्य एवं पिनकोड हेतु'
-                      : 'Extracts Address, District, State & Pincode'}
-                  </p>
-                </div>
-                <span className="mt-1 h-7 px-3 rounded-lg bg-indigo-950 text-white text-[11px] font-semibold flex items-center gap-1.5 pointer-events-none">
-                  <Upload className="w-3 h-3 text-orange-400" />
-                  <span>{aadhaarBackUploaded ? (currentLang === 'hi' ? 'फ़ोटो बदलें' : 'Replace Back') : (currentLang === 'hi' ? 'पीछे की फ़ोटो चुनें' : 'Upload Back')}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* SINGLE / COMBINED PHOTO FALLBACK BAR */}
-          <div className="relative border border-dashed border-slate-300 hover:border-indigo-400 rounded-xl p-2.5 bg-slate-50 flex items-center justify-between gap-3 text-xs text-slate-600 transition group cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="absolute inset-0 opacity-0 cursor-pointer z-10"
-              onChange={handleGeneralFileUpload}
-              aria-label="Upload Combined or Both Photos at Once"
-            />
-            <div className="flex items-center gap-2 min-w-0">
-              <ImageIcon className="w-4 h-4 text-indigo-700 flex-shrink-0" />
-              <span className="truncate text-[11px] font-medium text-slate-700">
+            <div>
+              <p className="font-bold text-slate-900 text-sm sm:text-base">
                 {currentLang === 'hi'
-                  ? 'या एक ही फ़ोटो में आगे-पीछे दोनों हों (e-Aadhaar / Xerox) तो यहाँ चुनें'
-                  : 'Or upload a single photo containing both sides (e-Aadhaar / Xerox / 2 files)'}
-              </span>
+                  ? 'आधार कार्ड की फ़ोटो चुनें'
+                  : 'Upload Aadhaar Card (1 or 2 Photos)'}
+              </p>
+              <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto leading-relaxed">
+                {currentLang === 'hi'
+                  ? 'एक संयुक्त फ़ोटो (आगे व पीछे दोनों) चुनें या दोनों फ़ोटो (आगे और पीछे) एक साथ चुनें'
+                  : 'Upload 1 combined photo (both front & back on 1 page) OR select 2 photos (front and back sides)'}
+              </p>
             </div>
-            <span className="text-[11px] font-bold text-indigo-950 bg-indigo-100/80 px-2.5 py-1 rounded-lg border border-indigo-200 flex-shrink-0 group-hover:bg-indigo-200 transition">
-              {currentLang === 'hi' ? 'संयुक्त फ़ोटो चुनें' : 'Choose Combined'}
+
+            <span className="mt-1 h-8 px-4 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-semibold shadow-2xs flex items-center gap-2 pointer-events-none transition">
+              <Upload className="w-3.5 h-3.5 text-orange-400" />
+              <span>
+                {savedDocs['AADHAAR']
+                  ? currentLang === 'hi'
+                    ? 'फ़ोटो बदलकर अपलोड करें'
+                    : 'Replace Aadhaar Photo(s)'
+                  : currentLang === 'hi'
+                  ? 'फ़ोटो चुनें (1 या 2 फ़ाइलें)'
+                  : 'Choose Photo(s) (1 or 2 files)'}
+              </span>
             </span>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-500 mt-1">
+              <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                <Check className="w-3 h-3" />
+                {currentLang === 'hi' ? 'नाम एवं जन्मतिथि' : 'Name & DOB'}
+              </span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                <Check className="w-3 h-3" />
+                {currentLang === 'hi' ? 'पता एवं ज़िला' : 'Address & District'}
+              </span>
+              <span>•</span>
+              <span className="text-slate-400">PNG, JPG, WEBP</span>
+            </div>
           </div>
         </div>
       )}

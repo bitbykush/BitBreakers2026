@@ -42,7 +42,7 @@ const EDUCATION_RANKS: Record<string, number> = {
 };
 
 // Document display names
-const DOC_NAMES: Record<string, { en: string; hi: string }> = {
+export const DOC_NAMES: Record<string, { en: string; hi: string }> = {
   DOC_AADHAAR: { en: 'Aadhaar Card', hi: 'आधार कार्ड' },
   DOC_CASTE: { en: 'Caste Certificate', hi: 'जाति प्रमाण पत्र' },
   DOC_INCOME: { en: 'Income Certificate', hi: 'आय प्रमाण पत्र' },
@@ -497,11 +497,11 @@ export function evaluateSchemeEligibility(
   if (missingDocs.length === 0) {
     conditionsMet.push({
       id: 'document_readiness',
-      labelEn: 'Document Verification:',
-      labelHi: 'दस्तावेज सत्यापन (Document Clearance):',
+      labelEn: 'Document Attachment:',
+      labelHi: 'दस्तावेज संलग्न (Documents Attached):',
       status: 'MET',
-      detailEn: 'All statutory identity and income documents verified via DigiLocker / OCR.',
-      detailHi: 'सभी अनिवार्य पहचान एवं आय दस्तावेज डिजीलॉकर / ओसीआर द्वारा सत्यापित।',
+      detailEn: 'All required scheme documents successfully uploaded and attached.',
+      detailHi: 'सभी अनिवार्य योजना दस्तावेज सफलतापूर्वक अपलोड व संलग्न।',
       iconType: 'documents',
     });
   } else {
@@ -509,11 +509,11 @@ export function evaluateSchemeEligibility(
     const missingNamesHi = missingDocs.map((d) => DOC_NAMES[d]?.hi || d).join(', ');
     conditionsWarning.push({
       id: 'document_readiness',
-      labelEn: 'Pending Verification:',
-      labelHi: 'लंबित दस्तावेज सत्यापन:',
+      labelEn: 'Pending Document Upload:',
+      labelHi: 'लंबित दस्तावेज अपलोड:',
       status: 'WARNING',
-      detailEn: `${missingDocs.length} pending: ${missingNames}. Can be attached prior to bank sanction.`,
-      detailHi: `${missingDocs.length} दस्तावेज लंबित: ${missingNamesHi}। बैंक स्वीकृति से पहले संलग्न किए जा सकते हैं।`,
+      detailEn: `${missingDocs.length} document(s) pending upload: ${missingNames}. Click to attach below.`,
+      detailHi: `${missingDocs.length} दस्तावेज अपलोड लंबित: ${missingNamesHi}। नीचे क्लिक करके फ़ाइल संलग्न करें।`,
       iconType: 'documents',
     });
   }

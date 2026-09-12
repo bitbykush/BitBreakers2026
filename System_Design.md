@@ -465,18 +465,17 @@ export const DevDebugDrawer: React.FC = () => {
 │       │                      │ XXXX-XXXX-3456 in 1.1 seconds. He will  │
 │       │                      │ NEVER have to upload it again."         │
 ├───────┼──────────────────────┼─────────────────────────────────────────┤
-│ 01:50 │ DigiLocker Sandbox & │ "He taps 'Verify via DigiLocker'.       │
-│   -   │ FastEmbed Match %    │ Enters demo OTP '123456'. Authenticated!│
-│ 02:30 │                      │ Our FastEmbed ONNX engine scores PMEGP  │
-│       │                      │ at 94.5% compatibility! We don't just   │
+│ 01:50 │ Direct Document      │ "He attaches scheme required documents. │
+│   -   │ Upload & FastEmbed   │ Our FastEmbed ONNX engine scores PMEGP  │
+│ 02:30 │ Match %              │ at 94.5% compatibility! We don't just   │
 │       │                      │ list schemes—we show the financial      │
 │       │                      │ split: 35% Govt Grant, 5% own margin,   │
 │       │                      │ and only missing documents are asked."  │
 ├───────┼──────────────────────┼─────────────────────────────────────────┤
 │ 02:30 │ Common App Format    │ "With one click, we generate the Common │
 │   -   │ (CAF) Print Preview  │ Application Format (CAF). It contains   │
-│ 03:00 │ & Hidden Dev HUD     │ all verified particulars, eKYC stamps,  │
-│       │                      │ and bank seals ready to print for DIC.  │
+│ 03:00 │ & Hidden Dev HUD     │ all attached particulars and documents, │
+│       │                      │ ready to print for DIC sanction.        │
 │       │                      │ And look at our Dev HUD: the entire     │
 │       │                      │ AI backend runs under 240MB RAM on a    │
 │       │                      │ 100% free server! Thank you!"           │
