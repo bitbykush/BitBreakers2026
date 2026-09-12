@@ -116,7 +116,7 @@ export default function DashboardPage() {
               </h3>
             </div>
             <p className="text-xs text-slate-600">
-              Personalized matches computed for {profile.name} ({profile.category} {profile.gender}) in {profile.district}, {profile.state}.
+              Personalized matches computed for {profile.name || 'Applicant'} ({[profile.category, profile.gender].filter(Boolean).join(' ') || 'General'}) in {profile.district || 'District'}, {profile.state || 'State'}.
             </p>
           </div>
         </div>

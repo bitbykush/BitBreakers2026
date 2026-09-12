@@ -53,3 +53,27 @@
 - **Status**: Fixed
 
 ---
+
+## [2026-09-12 13:46] - Search Bar Indiscriminately Returning Schemes for Random / Nonsense Queries
+
+- **Type**: Logic / Semantic Gating
+- **Severity**: High
+- **File**: `backend/app/services/matcher.py:270`, `frontend/src/lib/api.ts:194`, `frontend/src/app/page.tsx:117`
+- **Agent**: Mark42 / Antigravity Orchestrator
+- **Root Cause**: The hybrid matcher lacked trade relevance gating when a search query was provided. The composite scoring formula applied an artificial minimum score floor (`max(58.0, total_score)`) and returned every scheme with income eligibility, causing random strings (e.g. `asdfghjkl`) to match all schemes with ~60% compatibility. The client fallback matcher also mapped all mock schemes unconditionally without inspecting `profile.profession`.
+- **Error Message**:
+  ```text
+  Behavioral defect: Search bar returned 13-28 schemes even when random characters ('asdfghjkl') were typed.
+  No empty state was rendered when 0 relevant schemes existed.
+  ```
+- **Fix Applied**:
+  1. Implemented bilingual `check_trade_relevance` in `backend/app/services/matcher.py` with stop word filtering and trade synonym expansion (`potter`/`कुम्हार`, `tailor`/`सिलाई`, `dairy`/`दूध`, `solar`/`सौर`, `vendor`/`ठेला`, etc.). Schemes with zero token/semantic relevance now evaluate strictly to `score = 0.0`.
+  2. Implemented identical token & trade synonym gating in `frontend/src/lib/api.ts` for offline/fallback mode.
+  3. Updated `frontend/src/app/page.tsx` (`handleSearchTrade`) to clear schemes and reset state when the search input is cleared.
+  4. Added `SearchX` empty state with bilingual guidance in `BaselineMatchPreview.tsx` when no schemes match.
+  5. Added a 1-tap "Clear" (`✕`) button to `TradeSearchAndPills.tsx`.
+- **Prevention**: Always gate query-driven matchers with domain relevance filtering and an explicit empty state before calculating eligibility baselines.
+- **Status**: Fixed
+
+---
+

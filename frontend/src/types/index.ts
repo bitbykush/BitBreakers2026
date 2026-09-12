@@ -1,12 +1,13 @@
-export type SocialCategory = 'SC' | 'ST' | 'OBC' | 'EWS' | 'Minority' | 'General';
-export type Gender = 'Male' | 'Female' | 'Other';
-export type AreaType = 'Rural' | 'Urban';
-export type EducationLevel = 'Literate' | '10th' | '12th' | 'ITI' | 'Graduate' | 'PostGraduate';
+export type SocialCategory = 'SC' | 'ST' | 'OBC' | 'OBC-NCL' | 'SCT' | 'EWS' | 'Minority' | 'General' | '';
+export type Gender = 'Male' | 'Female' | 'Other' | '';
+export type AreaType = 'Rural' | 'Urban' | '';
+export type EducationLevel = 'N/A' | '10th' | '12th' | 'Diploma' | 'Graduate' | 'Post Graduate';
 export type OcrDocType = 'AADHAAR' | 'CASTE' | 'INCOME' | 'MARKSHEET';
 
 export interface ApplicantProfile {
   name: string;
   dob: string;
+  age?: number;
   gender: Gender;
   category: SocialCategory;
   annualIncome: number;
@@ -21,6 +22,8 @@ export interface ApplicantProfile {
   casteCertificateNo?: string;
   incomeCertificateNo?: string;
   marksPercentage?: number;
+  mobileNumber?: string;
+  email?: string;
 }
 
 export interface DocumentRecord {
@@ -109,3 +112,4 @@ export interface DevHudState {
   serverMemoryRssMb: number;
   maxLimitMb: number;
 }
+

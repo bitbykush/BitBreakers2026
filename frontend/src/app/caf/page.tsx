@@ -112,17 +112,17 @@ export default function CafPage() {
                   <td className="p-2 font-bold bg-slate-50">Social Category:</td>
                   <td className="p-2 font-semibold text-emerald-800">{profile.category} (Affirmative Action Bonus)</td>
                   <td className="p-2 font-bold bg-slate-50">Gender / DOB:</td>
-                  <td className="p-2">{profile.gender} / {profile.dob}</td>
+                  <td className="p-2">{profile.gender || 'N/A'} / {profile.dob || 'N/A'}{profile.age ? ` (Age: ${profile.age} yrs)` : ''}</td>
                 </tr>
                 <tr className="border-b border-slate-200">
                   <td className="p-2 font-bold bg-slate-50">Certified Annual Income:</td>
-                  <td className="p-2 font-semibold">₹{profile.annualIncome.toLocaleString('en-IN')} / year (Revenue Verified)</td>
+                  <td className="p-2 font-semibold">{profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year (Revenue Verified)` : 'Not Declared'}</td>
                   <td className="p-2 font-bold bg-slate-50">Location Classification:</td>
-                  <td className="p-2 font-semibold text-orange-700">{profile.areaType} Gram Panchayat ({profile.district}, {profile.state})</td>
+                  <td className="p-2 font-semibold text-orange-700">{profile.areaType || 'Rural'} Gram Panchayat ({profile.district || 'District'}, {profile.state || 'State'})</td>
                 </tr>
                 <tr>
                   <td className="p-2 font-bold bg-slate-50">Education & Course:</td>
-                  <td className="p-2 font-semibold">{profile.education} Pass</td>
+                  <td className="p-2 font-semibold">{profile.education || 'N/A'}</td>
                   <td className="p-2 font-bold bg-slate-50">DigiLocker Verification:</td>
                   <td className="p-2 text-emerald-700 font-mono font-semibold">✓ Verified (DL-2026-X8921)</td>
                 </tr>

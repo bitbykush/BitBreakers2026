@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Mic, Compass, Check } from 'lucide-react';
+import { Search, Mic, Compass, Check, X } from 'lucide-react';
 import { TRADE_PRESETS } from '@/lib/mockData';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
@@ -77,6 +77,19 @@ export const TradeSearchAndPills: React.FC<TradeSearchAndPillsProps> = ({
               }
               className="w-full bg-transparent text-slate-900 placeholder-slate-400 text-xs sm:text-sm font-medium border-none focus:outline-none focus:ring-0"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  onSearchChange('');
+                }}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer flex-shrink-0"
+                title={currentLang === 'hi' ? 'खोज हटाएं' : 'Clear search'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Right Controls: Voice Lang Switcher + Voice Mic Button */}

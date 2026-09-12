@@ -239,24 +239,26 @@ def clean_human_name(candidate_line: str) -> Optional[str]:
     return None
 
 
-def classify_education_level(text: str) -> Optional[str]:
+def classify_education_level(text: str) -> str:
     """
-    Classifies academic qualification across CBSE, ICSE, State Boards, Polytechnic, and Universities.
-    Ensures precise word boundaries to prevent false positives (e.g. 'hsc' inside 'englishschool').
-    Handles joint board titles like 'BOARD OF HIGH SCHOOL AND INTERMEDIATE EDUCATION'.
+    Classifies academic qualification strictly into one of:
+    'Post Graduate' | 'Graduate' | 'Diploma' | '12th' | '10th' | 'N/A'
+    Handles CBSE, ICSE, State Boards, Polytechnic, ITI, and Universities.
+    Ensures precise word boundaries to prevent false positives.
+    Defaults to 'N/A' if no educational certificate or qualification is recognized.
     """
     upper = text.upper()
-    # 1. PostGraduate
+    # 1. Post Graduate
     if re.search(r'\b(POST\s*GRADUAT|MASTER\s*OF|M\.?\s*TECH|M\.?\s*SC|M\.?\s*COM|M\.?\s*A\b|M\.?\s*B\.?\s*A|M\.?\s*C\.?\s*A|परास्नातक)', upper):
-        return "PostGraduate"
+        return "Post Graduate"
 
     # 2. Graduate / Bachelor / University Degree
     if re.search(r'\b(BACHELOR\s*OF|B\.?\s*TECH|B\.?\s*E\b|B\.?\s*SC|B\.?\s*COM|B\.?\s*A\b|B\.?\s*B\.?\s*A|B\.?\s*C\.?\s*A|DEGREE\s*EXAMINATION|GRADUATION|स्नातक)', upper):
         return "Graduate"
 
-    # 3. ITI / Polytechnic / Diploma
+    # 3. Diploma / Polytechnic / ITI
     if re.search(r'\b(POLYTECHNIC|DIPLOMA|INDUSTRIAL\s*TRAINING|NATIONAL\s*TRADE\s*CERTIFICATE|\bNTC\b|\bITI\b)', upper):
-        return "ITI"
+        return "Diploma"
 
     # Neutralize joint board authority headers that include BOTH high school and intermediate
     clean_upper = re.sub(r'HIGH\s*SCHOOL\s*(?:AND|&)\s*INTERMEDIATE', '', upper)
@@ -275,7 +277,7 @@ def classify_education_level(text: str) -> Optional[str]:
     if re.search(r'\bSECONDARY\b', clean_upper) and not re.search(r'\b(SENIOR|HIGHER)\b', clean_upper):
         return "10th"
 
-    return "10th"
+    return "N/A"
 
 
 class TargetedDocumentExtractor:
@@ -462,7 +464,7 @@ class TargetedDocumentExtractor:
     def extract_caste(self, text_lines: List[str]) -> Dict[str, Any]:
         """
         Targeted Extractor for Caste Certificate:
-        Extracts Category (SC, ST, OBC, EWS, GENERAL) and Certificate Reference.
+        Extracts Category (SC, ST, OBC, OBC-NCL, SCT, EWS, GENERAL) and Certificate Reference.
         """
         data: Dict[str, Any] = {
             "category": None,
@@ -470,28 +472,51 @@ class TargetedDocumentExtractor:
         }
         full_text = " ".join(text_lines)
 
-        # 1. Regex: Certificate reference number
-        cert_match = re.search(r'(?:NO|NUMBER|क्रमांक|प्रमाणपत्र\s*संख्या)[:\s]*([A-Z0-9/-]{6,25})', full_text, re.IGNORECASE)
+        # 1. Regex: Certificate reference number (Prioritize explicit headers and require at least one digit)
+        cert_match = re.search(
+            r'(?:CERTIFICATE\s*NO\.?|OUTWARD\s*NO\.?|CASE\s*NO\.?|REG(?:N)?\.?\s*NO\.?|REFERENCE\s*NO\.?|REF\s*NO\.?|क्रमांक|प्रमाणपत्र(?:\s*संख्या)?)[:\s.-]*([A-Z0-9/-]*\d[A-Z0-9/-]{3,25})',
+            full_text,
+            re.IGNORECASE,
+        )
         if cert_match:
             data["certificate_number"] = cert_match.group(1).strip()
         else:
             code_match = re.search(r'\b([A-Z]{2,4}[/-]\d{4,8}[/-][A-Z0-9]{2,8})\b', full_text)
             if code_match:
                 data["certificate_number"] = code_match.group(1).strip()
+            else:
+                generic_match = re.search(r'\b(?:NO\.?|NUMBER)[:\s.-]*([A-Z0-9/-]*\d[A-Z0-9/-]{3,25})\b', full_text, re.IGNORECASE)
+                if generic_match:
+                    data["certificate_number"] = generic_match.group(1).strip()
 
-        # 2. Boilerplate Keyword Matching for Category
-        full_lower = full_text.lower()
-        best_category = None
+        # 2. Targeted Category Classification (Using precise regex with word boundaries)
+        upper = full_text.upper()
+        # Priority A: Non-Creamy Layer / OBC-NCL
+        if (
+            re.search(r'\b(NON[-\s]*CREAMY\s*LAYER|OBC[-\s]*NCL|NCL|गैर\s*मलाईदार)\b', upper)
+            and re.search(r'\b(BACKWARD|SEBC|OBC|MARATHA|COMMUNITY|CASTE|CLASSES|CLASS)\b', upper)
+        ):
+            data["category"] = "OBC-NCL"
+        # Priority B: SCT / Joint SC & ST
+        elif re.search(r'\b(SCT|SC\s*/\s*ST|SC\s*&\s*ST)\b', upper) or re.search(
+            r'SCHEDULED\s*CASTE\s*(?:AND|&|\/)\s*SCHEDULED\s*TRIBE', upper
+        ):
+            data["category"] = "SCT"
+        # Priority C: Scheduled Caste (SC)
+        elif re.search(r'\b(SCHEDULED\s*CASTE|ANUSUCHIT\s*JATI|अनुसूचित\s*जाति|CHAMAR|JATAV|VALMIKI|\bSC\b)', upper):
+            data["category"] = "SC"
+        # Priority D: Scheduled Tribe (ST)
+        elif re.search(r'\b(SCHEDULED\s*TRIBE|ANUSUCHIT\s*JANJATI|अनुसूचित\s*जनजाति|ADIVASI|GOND|SANTHAL|BHIL|\bST\b)', upper):
+            data["category"] = "ST"
+        # Priority E: Other Backward Class (OBC / SEBC)
+        elif re.search(r'\b(OTHER\s*BACKWARD|BACKWARD\s*CLASS|SEBC|OBC|ANYA\s*PICHDA|पिछड़ा\s*वर्ग|अन्य\s*पिछड़ा)', upper):
+            data["category"] = "OBC"
+        # Priority F: Economically Weaker Section (EWS)
+        elif re.search(r'\b(ECONOMICALLY\s*WEAKER|EWS|AARTHIK\s*ROOP|आर्थिक\s*रूप\s*से\s*कमजोर)', upper):
+            data["category"] = "EWS"
+        else:
+            data["category"] = None
 
-        for cat_key, keywords in self.caste_keywords.items():
-            for kw in keywords:
-                if kw in full_lower:
-                    best_category = cat_key
-                    break
-            if best_category:
-                break
-
-        data["category"] = best_category
         return data
 
     def extract_income(self, text_lines: List[str]) -> Dict[str, Any]:
@@ -507,33 +532,48 @@ class TargetedDocumentExtractor:
         full_text = " ".join(text_lines)
 
         # 1. Regex: Annual Income Currency Amount
+        # Handles ₹, INR, Rs., Rupees, आय, वार्षिक आय with commas and decimals e.g. 60000.00, 1,20,000
         income_match = re.search(
-            r'(?:₹|INR|RS\.?|आय|RUPEES|कुल\s*वार्षिक\s*आय)[:\s]*([0-9,]{4,9})',
+            r'(?:₹|INR|RS\.?|आय|RUPEES|कुल\s*वार्षिक\s*आय|वार्षिक\s*आय|ANNUAL\s*(?:FAMILY\s*)?INCOME|FAMILY\s*INCOME)[:\s]*([0-9,]+(?:\.[0-9]{2})?)',
             full_text,
-            re.IGNORECASE
+            re.IGNORECASE,
         )
         if income_match:
             try:
                 data["annual_income"] = float(income_match.group(1).replace(",", ""))
             except ValueError:
                 pass
-        else:
-            standalone = re.findall(r'\b([1-9][0-9],[0-9]{2},[0-9]{3}|[1-9][0-9]{4,6})\b', full_text)
+
+        # Fallback: Search for standalone formatted Indian currency figures (e.g. 1,20,000 or 60000)
+        if data["annual_income"] is None:
+            standalone = re.findall(r'\b([1-9][0-9],[0-9]{2},[0-9]{3}|[1-9][0-9]{4,6}(?:\.[0-9]{2})?)\b', full_text)
             if standalone:
                 try:
                     data["annual_income"] = float(standalone[0].replace(",", ""))
                 except ValueError:
                     pass
 
-        # 2. Regex: Financial Year (e.g. 2024-2025 or 2023-24)
-        fy_match = re.search(r'\b(20[2-3][0-9]-[2-3][0-9]|20[2-3][0-9]-20[2-3][0-9])\b', full_text)
+        # 2. Regex: Financial Year (e.g. 2024-2025, 2022-2023, 2023-24 even if glued without boundary)
+        fy_match = re.search(r'(?:FINANCIAL\s*YEAR|FY|वर्ष)[:\s]*(20\d{2}[-/](?:20)?\d{2})', full_text, re.IGNORECASE)
         if fy_match:
             data["financial_year"] = fy_match.group(1)
+        else:
+            fy_fallback = re.search(r'(?:20[2-3][0-9]-(?:20)?[2-3][0-9])', full_text)
+            if fy_fallback:
+                data["financial_year"] = fy_fallback.group(0)
 
-        # 3. Certificate Serial / Ref Number
-        cert_match = re.search(r'(?:NO|NUMBER|क्रमांक|प्रमाणपत्र)[:\s]*([A-Z0-9/-]{6,25})', full_text, re.IGNORECASE)
+        # 3. Certificate Serial / Ref Number (Requires digits to avoid noise words like ORVILLAGE)
+        cert_match = re.search(
+            r'(?:REFERENCE\s*NO\.?|CASE\s*NO\.?|CERTIFICATE\s*NO\.?|OUTWARD\s*NO\.?|क्रमांक|प्रमाणपत्र(?:\s*संख्या)?)[:\s.-]*([A-Z0-9/-]*\d[A-Z0-9/-]{3,25})',
+            full_text,
+            re.IGNORECASE,
+        )
         if cert_match:
             data["certificate_number"] = cert_match.group(1).strip()
+        else:
+            generic_no = re.search(r'\b(?:NO\.?|NUMBER)[:\s.-]*([A-Z0-9/-]*\d[A-Z0-9/-]{3,25})\b', full_text, re.IGNORECASE)
+            if generic_no:
+                data["certificate_number"] = generic_no.group(1).strip()
 
         return data
 

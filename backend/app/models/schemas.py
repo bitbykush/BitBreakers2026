@@ -100,11 +100,11 @@ class SchemeMatchRequest(BaseModel):
     Matches frontend ApiService.matchSchemes POST payload.
     """
     profession: str = Field(..., description="Applicant trade or business activity (e.g. Terracotta Potter, Tailor)")
-    category: str = Field(default="General", description="Social Category: SC | ST | OBC | EWS | Minority | General")
+    category: str = Field(default="General", description="Social Category: SC | ST | OBC | OBC-NCL | SCT | EWS | Minority | General")
     annual_income_inr: float = Field(default=0.0, description="Annual household income in Rupees")
     gender: str = Field(default="Male", description="Gender: Male | Female | Other")
     area: str = Field(default="Rural", description="Area type: Rural | Urban")
-    education: str = Field(default="10th", description="Education: Literate | 8th | 10th | 12th | ITI | Graduate | PostGraduate")
+    education: str = Field(default="N/A", description="Education: N/A | 10th | 12th | Diploma | Graduate | Post Graduate")
     required_capital_inr: float = Field(default=100000.0, description="Capital or loan required in Rupees")
     uploaded_document_codes: List[str] = Field(default=[], description="List of document codes verified in session")
 
@@ -154,12 +154,12 @@ class OcrExtractedResponse(BaseModel):
     address: Optional[str] = Field(None, description="Residential address extracted from back of Aadhaar")
     state: Optional[str] = Field(None, description="State extracted from back of Aadhaar")
     district: Optional[str] = Field(None, description="District extracted from back of Aadhaar")
-    category: Optional[str] = Field(None, description="Caste / Social category: SC | ST | OBC | EWS | GENERAL")
+    category: Optional[str] = Field(None, description="Caste / Social category: SC | ST | OBC | OBC-NCL | SCT | EWS | GENERAL")
     annual_income: Optional[float] = Field(None, description="Annual income in INR")
     financial_year: Optional[str] = Field(None, description="Financial assessment year (e.g. 2024-2025)")
     certificate_number: Optional[str] = Field(None, description="Official certificate reference / serial number")
     marks_percentage: Optional[float] = Field(None, description="Academic marks percentage")
-    highest_education: Optional[str] = Field(None, description="Qualification: 10TH_PASS | 12TH_PASS | GRADUATE | DIPLOMA")
+    highest_education: Optional[str] = Field(None, description="Qualification: 10th | 12th | Diploma | Graduate | Post Graduate | N/A")
     confidence: float = Field(0.0, description="OCR confidence percentage (0-100)")
     engine: str = Field("RapidOCR_ONNX", description="OCR engine used: RapidOCR_ONNX | Gemini_1.5_Flash | Mock")
     needs_permission: bool = Field(False, description="True if local OCR confidence was low and requires user permission before calling Gemini")

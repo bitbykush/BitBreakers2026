@@ -163,3 +163,21 @@ COPY . .
 # Explicit single worker to avoid 512MB RAM overflow
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
 ```
+
+---
+
+## 5. Mandatory Git Publication Restriction (Autofill Feature)
+
+> [!WARNING]
+> **DO NOT PUBLISH OR PUSH AUTOFILL TO GIT**:
+> The AI Web Automation & Form-Filling Assistant (e-RPA) is actively under local development and is **NOT** ready for git publication.
+> - **Code Preservation**: Keep all autofill code intact and functional locally. NEVER delete or remove it.
+> - **Git Publication Ban**: Do NOT stage, commit, or push any of the following to Git in this or any future chats until the user explicitly commands:
+>   - `backend/app/api/v1/routes_automation.py`
+>   - `backend/app/models/automation_schemas.py`
+>   - `backend/app/services/form_matcher_service.py`
+>   - `frontend/public/extension/**`
+>   - `frontend/src/components/automation/**`
+>   - `frontend/src/lib/bookmarklet.ts`
+> - When committing for other features/tasks, use targeted staging (`git add <specific-file>`) and exclude all autofill files.
+

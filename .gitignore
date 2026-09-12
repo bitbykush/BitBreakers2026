@@ -43,3 +43,13 @@ Thumbs.db
 .agent/
 GEMINI.md
 
+# Autofill / e-RPA Assistant (Local Development Only - Never Publish to Git)
+backend/app/api/v1/routes_automation.py
+backend/app/models/automation_schemas.py
+backend/app/services/form_matcher_service.py
+frontend/public/extension/
+frontend/src/components/automation/
+frontend/src/lib/bookmarklet.ts
+OCR-test/
+
+

@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import logging
@@ -28,6 +29,127 @@ EDUCATION_RANKS = {
     "graduate": 4,
     "postgraduate": 5
 }
+
+# Stop words ignored during search query trade extraction
+QUERY_STOP_WORDS = {
+    "in", "for", "and", "the", "a", "an", "to", "of", "with", "is", "at", "by", "from",
+    "need", "want", "loan", "grant", "subsidy", "scheme", "business", "work", "project",
+    "finance", "money", "rupees", "inr", "lakh", "crore", "govt", "government",
+    "काम", "के", "लिए", "चाहिए", "लोन", "ऋण", "योजना", "सरकारी", "मुझे", "का", "की",
+    "में", "से", "पर", "है", "हुनर", "व्यापार", "दुकानदार", "हेतु", "सहायता", "अनुदान",
+    "स्वरोजगार", "उद्योग"
+}
+
+# High-fidelity trade aliases and cross-lingual synonym anchors
+TRADE_SYNONYMS = {
+    "potter": ["pottery", "terracotta", "clay", "artisan", "कुम्हार", "माटी", "बर्तन"],
+    "pottery": ["potter", "terracotta", "clay", "artisan", "कुम्हार", "माटी"],
+    "कुम्हार": ["potter", "pottery", "terracotta", "clay", "artisan", "माटी"],
+    "tailor": ["tailoring", "garment", "handloom", "sewing", "boutique", "textile", "सिलाई", "दर्जी"],
+    "tailoring": ["tailor", "garment", "handloom", "sewing", "boutique", "textile", "सिलाई", "दर्जी"],
+    "sewing": ["tailor", "tailoring", "garment", "handloom", "boutique", "textile", "सिलाई", "दर्जी"],
+    "boutique": ["tailor", "tailoring", "garment", "handloom", "sewing", "textile", "सिलाई"],
+    "सिलाई": ["tailor", "tailoring", "sewing", "garment", "दर्जी"],
+    "दर्जी": ["tailor", "tailoring", "sewing", "सिलाई"],
+    "vendor": ["thela", "street vendor", "cart", "fruit stall", "vegetable", "stall", "रेहड़ी", "पटरी", "ठेला"],
+    "stall": ["vendor", "street vendor", "thela", "stall", "cart", "रेहड़ी", "ठेला"],
+    "thela": ["vendor", "street vendor", "रेहड़ी", "ठेला"],
+    "ठेला": ["thela", "vendor", "street vendor", "रेहड़ी"],
+    "रेहड़ी": ["thela", "vendor", "street vendor", "ठेला", "पटरी"],
+    "पटरी": ["thela", "vendor", "street vendor", "रेहड़ी"],
+    "dairy": ["milk", "cow", "buffalo", "cattle", "livestock", "animal husbandry", "डेयरी", "दूध", "पशुपालन"],
+    "milk": ["dairy", "cow", "buffalo", "cattle", "livestock", "animal husbandry", "डेयरी", "दूध", "पशुपालन"],
+    "दूध": ["dairy", "milk", "cattle", "livestock", "डेयरी", "पशुपालन"],
+    "डेयरी": ["dairy", "milk", "cattle", "livestock", "दूध", "पशुपालन"],
+    "solar": ["solar panel", "renewable", "energy", "photovoltaic", "scientist", "research", "सोलर", "सौर"],
+    "सोलर": ["solar", "renewable", "energy", "सौर"],
+    "सौर": ["solar", "renewable", "energy", "सोलर"],
+    "carpenter": ["carpentry", "wood", "furniture", "बढ़ई", "काष्ठकला"],
+    "carpentry": ["carpenter", "wood", "furniture", "बढ़ई", "काष्ठकला"],
+    "बढ़ई": ["carpenter", "carpentry", "wood", "काष्ठकला"],
+    "blacksmith": ["lohar", "iron", "metal", "लोहार", "धातु"],
+    "lohar": ["blacksmith", "iron", "metal", "लोहार", "धातु"],
+    "लोहार": ["blacksmith", "lohar", "iron", "धातु"],
+    "weaver": ["weaving", "bamboo", "basket", "handloom", "बुनकर", "बांस", "टोकरी"],
+    "बुनकर": ["weaver", "weaving", "handloom", "बांस", "टोकरी"],
+    "cobbler": ["leather", "footwear", "shoes", "मोची", "चर्मकार", "जूता"],
+    "मोची": ["cobbler", "leather", "footwear", "चर्मकार", "जूता"],
+    "barber": ["salon", "hair", "beauty parlour", "नाई", "सैलून", "ब्यूटी"],
+    "नाई": ["barber", "salon", "hair", "सैलून"],
+    "student": ["scholarship", "college", "school", "degree", "education", "study", "छात्र", "छात्रवृत्ति", "पढ़ाई"],
+    "college": ["student", "scholarship", "degree", "education", "study", "छात्र"],
+    "degree": ["student", "scholarship", "college", "education", "study", "छात्र"],
+    "छात्र": ["student", "scholarship", "college", "degree", "छात्रवृत्ति", "पढ़ाई"],
+    "छात्रवृत्ति": ["scholarship", "student", "college", "degree", "छात्र", "पढ़ाई"],
+    "पढ़ाई": ["study", "student", "scholarship", "education", "छात्र"],
+    "fisheries": ["fish", "aquaculture", "pond", "मछली", "मत्स्य"],
+    "fish": ["fisheries", "aquaculture", "pond", "मछली", "मत्स्य"],
+    "aquaculture": ["fisheries", "fish", "pond", "मछली", "मत्स्य"],
+    "मछली": ["fish", "fisheries", "aquaculture", "मत्स्य"],
+    "farmer": ["farming", "agriculture", "kisan", "crop", "खेती", "किसान"],
+    "farming": ["farmer", "agriculture", "kisan", "खेती", "किसान"],
+    "खेती": ["farming", "farmer", "agriculture", "किसान"],
+    "किसान": ["farmer", "farming", "agriculture", "खेती"],
+    "food": ["catering", "dhaba", "restaurant", "canteen", "processing", "pickle", "masala", "खान-पान", "ढाबा", "अचार", "मसाला"],
+    "pickle": ["food", "processing", "catering", "masala", "अचार"],
+    "masala": ["food", "processing", "catering", "pickle", "मसाला"],
+    "ढाबा": ["food", "catering", "dhaba", "restaurant", "खान-पान"],
+    "mechanic": ["repair", "garage", "vehicle", "automobile", "ev", "मैकेनिक", "मरम्मत"],
+    "मैकेनिक": ["mechanic", "repair", "garage", "मरम्मत"]
+}
+
+
+def check_trade_relevance(scheme: Dict[str, Any], query: str, semantic_sim: float, is_mock_mode: bool) -> Tuple[bool, float, int]:
+    """
+    Evaluates whether a scheme is meaningfully relevant to a user's trade/profession query.
+    Returns: (is_relevant, match_ratio, matched_token_count)
+    """
+    if not query or not query.strip():
+        # Empty query means general browsing, all eligible schemes pass
+        return True, 1.0, 0
+
+    clean_query = query.strip().lower()
+    # Extract query tokens (ignoring stop words)
+    raw_tokens = re.findall(r'[\w\u0900-\u097F]+', clean_query)
+    tokens = [t for t in raw_tokens if t not in QUERY_STOP_WORDS and len(t) >= 2]
+    if not tokens:
+        tokens = [t for t in raw_tokens if len(t) >= 2]
+    if not tokens:
+        return False, 0.0, 0
+
+    # Expand tokens with synonyms
+    expanded_tokens = set(tokens)
+    for t in tokens:
+        if t in TRADE_SYNONYMS:
+            expanded_tokens.update(TRADE_SYNONYMS[t])
+
+    # Construct scheme corpus
+    crit = scheme.get("eligibilityCriteria", {})
+    target_kw = crit.get("targetKeywords", "").lower()
+    name_en = scheme.get("nameEn", "").lower()
+    name_hi = scheme.get("nameHi", "").lower()
+    desc_en = scheme.get("descriptionEn", "").lower()
+    desc_hi = scheme.get("descriptionHi", "").lower()
+    tags = " ".join(scheme.get("tags", [])).lower()
+    highlights = " ".join(scheme.get("eligibilityHighlights", [])).lower()
+    benefits = " ".join(scheme.get("benefits", [])).lower()
+    badge = scheme.get("categoryBadge", "").lower()
+
+    scheme_corpus = f"{target_kw} {name_en} {name_hi} {tags} {badge} {desc_en} {desc_hi} {highlights} {benefits}"
+
+    # Match tokens against scheme corpus
+    matched_tokens = {tok for tok in expanded_tokens if tok in scheme_corpus}
+
+    direct_matched_original = [t for t in tokens if t in matched_tokens or any(s in matched_tokens for s in TRADE_SYNONYMS.get(t, []))]
+    match_ratio = len(direct_matched_original) / max(1, len(tokens))
+
+    # Real semantic similarity threshold check (only if not in synthetic mock mode)
+    semantic_pass = (not is_mock_mode) and (semantic_sim >= 0.38)
+
+    # Relevant only if original token/synonym matched or high semantic similarity
+    is_relevant = (len(direct_matched_original) > 0) or semantic_pass
+
+    return is_relevant, match_ratio, len(direct_matched_original)
 
 
 class SchemeMatcher:
@@ -111,7 +233,19 @@ class SchemeMatcher:
         if allowed_cats:
             norm_profile_cat = profile.category.strip().upper()
             allowed_upper = [c.upper() for c in allowed_cats]
-            if norm_profile_cat not in allowed_upper:
+            
+            # Map compound/alias categories:
+            # OBC-NCL satisfies OBC requirements
+            # SCT satisfies SC or ST requirements
+            candidate_cats = [norm_profile_cat]
+            if norm_profile_cat in ["OBC-NCL", "OBC_NCL"]:
+                candidate_cats.extend(["OBC", "SEBC"])
+            elif norm_profile_cat in ["SCT", "SC/ST", "SC_ST"]:
+                candidate_cats.extend(["SC", "ST"])
+            elif norm_profile_cat == "OBC":
+                candidate_cats.append("OBC-NCL")
+
+            if not any(c in allowed_upper for c in candidate_cats):
                 return False, f"Category '{profile.category}' not eligible (requires {', '.join(allowed_cats)})"
 
         # 3. Gender Exclusivity Check (e.g. Women-only schemes)
@@ -147,35 +281,35 @@ class SchemeMatcher:
         self,
         scheme: Dict[str, Any],
         profile: SchemeMatchRequest,
-        semantic_sim: float
+        semantic_sim: float,
+        is_mock_mode: bool = False
     ) -> float:
         """
         Computes composite compatibility score (0 - 100%):
-        - Semantic Vector Similarity: 40% weight
-        - Trade Keyword Overlap: 15% weight
-        - Financial Capital Match: 15% weight
-        - Base Eligibility Baseline: 15% weight
-        - Affirmative Action Boost (Women, SC/ST, Rural): up to 15% bonus
+        If profession is specified, checks strict trade relevance first.
+        If not trade relevant, returns 0.0 to prevent listing schemes for random queries.
         """
+        prof = profile.profession.strip() if profile.profession else ""
+        if prof:
+            is_relevant, match_ratio, _ = check_trade_relevance(
+                scheme, prof, semantic_sim, is_mock_mode
+            )
+            if not is_relevant:
+                return 0.0
+
+            # Effective similarity blends semantic cosine and direct trade match ratio
+            effective_sim = max(semantic_sim if not is_mock_mode else 0.0, match_ratio * 0.9)
+            clamped_sim = max(0.0, min(1.0, (effective_sim + 1.0) / 2.0))
+            semantic_score = clamped_sim * 40.0
+            keyword_score = match_ratio * 18.0
+        else:
+            # Generic browsing without a specific profession query
+            semantic_score = 30.0
+            keyword_score = 12.0
+
         crit = scheme.get("eligibilityCriteria", {})
 
-        # 1. Trade Keyword Token Overlap & Semantic Blending
-        target_kw = crit.get("targetKeywords", "").lower()
-        prof_lower = profile.profession.lower().replace("&", " ")
-        prof_tokens = [t for t in prof_lower.split() if len(t) > 2]
-
-        matched_tokens = [t for t in prof_tokens if t in target_kw or target_kw in t]
-        token_ratio = len(matched_tokens) / max(1, len(prof_tokens)) if prof_tokens else 0.0
-
-        # Effective semantic similarity: uses FastEmbed ONNX cosine sim, with token ratio safeguard
-        effective_sim = max(semantic_sim, token_ratio * 0.88)
-        clamped_sim = max(0.0, min(1.0, (effective_sim + 1.0) / 2.0))
-        semantic_score = clamped_sim * 40.0
-
-        # 2. Direct Keyword / Trade Affinity Boost
-        keyword_score = token_ratio * 18.0
-
-        # 3. Capital Fit component (15% weight)
+        # Capital Fit component (15% weight)
         capital_score = 10.0
         min_cap = crit.get("minCapital", 0)
         max_cap = crit.get("maxCapital", 10000000)
@@ -188,10 +322,10 @@ class SchemeMatcher:
         else:
             capital_score = max(5.0, 15.0 - ((req_cap - max_cap) / max(1, max_cap)) * 10.0)
 
-        # 4. Base Eligible Baseline (18% weight)
+        # Base Eligible Baseline (18% weight)
         baseline_score = 18.0
 
-        # 5. Affirmative Action Boost (Up to 12% bonus)
+        # Affirmative Action Boost (Up to 12% bonus)
         affirmative_boost = 0.0
         if profile.gender.strip().capitalize() == "Female":
             affirmative_boost += 4.5
@@ -204,8 +338,7 @@ class SchemeMatcher:
 
         total_score = semantic_score + keyword_score + capital_score + baseline_score + affirmative_boost
 
-        # Cap between 60.0% (for eligible matches) and 98.5%
-        return round(min(98.5, max(58.0, total_score)), 1)
+        return round(min(98.5, max(60.0, total_score)), 1)
 
     def resolve_documents(
         self,
@@ -229,8 +362,8 @@ class SchemeMatcher:
         start_time = time.perf_counter()
         embedder = get_embedding_service()
 
-        # Embed query text
-        query_text = f"{request.profession} required capital {request.required_capital_inr}"
+        # Embed query text (only the actual profession text if provided)
+        query_text = request.profession.strip() if request.profession and request.profession.strip() else "Government Welfare Scheme"
         query_vector = embedder.embed_single(query_text)
 
         matches: List[SchemeMatch] = []
@@ -251,7 +384,7 @@ class SchemeMatcher:
                 score = 0.0
             else:
                 sim = embedder.cosine_similarity(query_vector, scheme_vec)
-                score = self.compute_compatibility_score(s, request, sim)
+                score = self.compute_compatibility_score(s, request, sim, embedder.is_mock_mode())
 
             # If score > 0, include in ranked results
             if score > 0.0:
@@ -316,16 +449,18 @@ class SchemeMatcher:
         for s in self._schemes:
             sid = s["id"]
             svec = self._scheme_vectors.get(sid)
-            if svec is not None:
-                sim = embedder.cosine_similarity(query_vec, svec)
-            else:
-                sim = 0.0
+            sim = embedder.cosine_similarity(query_vec, svec) if svec is not None else 0.0
 
-            # Quick keyword boost
-            kw = s.get("eligibilityCriteria", {}).get("targetKeywords", "").lower()
-            tokens = request.profession_query.lower().split()
-            boost = 0.15 if any(t in kw for t in tokens if len(t) > 2) else 0.0
-            composite = max(0.0, (sim + 1.0) / 2.0) + boost
+            is_rel, match_ratio, _ = check_trade_relevance(
+                s, request.profession_query, sim, embedder.is_mock_mode()
+            )
+            if not is_rel:
+                continue
+
+            if embedder.is_mock_mode():
+                composite = match_ratio
+            else:
+                composite = max(0.0, (sim + 1.0) / 2.0) * 0.7 + (match_ratio * 0.3)
 
             req_docs = s.get("requiredDocuments", [])
             verified, missing = self.resolve_documents(req_docs, request.uploaded_document_codes)

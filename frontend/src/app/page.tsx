@@ -31,6 +31,7 @@ import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
 
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
+import { calculateAge, formatDobForInput } from '@/lib/dateUtils';
 import { MOCK_SCHEMES } from '@/lib/mockData';
 import {
   ApplicantProfile,
@@ -115,8 +116,11 @@ export default function Home() {
   };
 
   const handleSearchTrade = (query: string) => {
-    if (query && query.trim().length > 0) {
+    const trimmed = query ? query.trim() : '';
+    if (trimmed.length > 0) {
       setHasSearchedOrSelectedTrade(true);
+    } else {
+      setHasSearchedOrSelectedTrade(false);
     }
     const updated = StorageService.saveProfile({
       profession: query,
@@ -124,9 +128,11 @@ export default function Home() {
     });
     setProfile(updated);
 
-    if (query && query.trim().length > 1) {
+    if (trimmed.length > 1) {
       const verifiedDocs = StorageService.getDocuments().filter((d) => d.isVerified).map((d) => d.code);
       ApiService.matchSchemes(updated, verifiedDocs).then(setSchemes);
+    } else {
+      setSchemes([]);
     }
   };
 
@@ -148,7 +154,13 @@ export default function Home() {
     if (extracted.masked_aadhaar) patch.maskedAadhaar = extracted.masked_aadhaar;
     if (extracted.category) patch.category = extracted.category;
     if (extracted.annual_income) patch.annualIncome = extracted.annual_income;
-    if (extracted.certificate_number) patch.casteCertificateNo = extracted.certificate_number;
+    if (extracted.certificate_number) {
+      if (extracted.doc_type === 'INCOME') {
+        patch.incomeCertificateNo = extracted.certificate_number;
+      } else if (extracted.doc_type === 'CASTE') {
+        patch.casteCertificateNo = extracted.certificate_number;
+      }
+    }
     if (extracted.marks_percentage) patch.marksPercentage = extracted.marks_percentage;
     if (extracted.highest_education) patch.education = extracted.highest_education;
     if (extracted.state) patch.state = extracted.state;
@@ -351,6 +363,26 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Date of Birth with Automatic Age Calculation */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {currentLang === 'hi' ? 'जन्म तिथि (DOB)' : 'Date of Birth (जन्म तिथि)'}
+                    </label>
+                    {profile.age !== undefined && profile.age !== null && (
+                      <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                        {currentLang === 'hi' ? `आयु: ${profile.age} वर्ष` : `Age: ${profile.age} yrs`}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="date"
+                    value={formatDobForInput(profile.dob)}
+                    onChange={(e) => handleFormChange('dob', e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900 bg-white"
+                  />
+                </div>
+
                 {/* Gender Pills */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -384,9 +416,18 @@ export default function Home() {
                     onChange={(e) => handleFormChange('category', e.target.value as SocialCategory)}
                     className="w-full h-11 px-3 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-semibold text-slate-900 bg-white"
                   >
+                    <option value="" disabled>
+                      {currentLang === 'hi' ? '-- वर्ग चुनें (Select Category) --' : '-- Select Category --'}
+                    </option>
+                    <option value="OBC-NCL">
+                      {currentLang === 'hi' ? 'OBC-NCL - गैर मलाईदार परत' : 'OBC-NCL - Non-Creamy Layer'}
+                    </option>
                     <option value="OBC">OBC - Other Backward Class (अन्य पिछड़ा वर्ग)</option>
                     <option value="SC">SC - Scheduled Caste (अनुसूचित जाति)</option>
                     <option value="ST">ST - Scheduled Tribe (अनुसूचित जनजाति)</option>
+                    <option value="SCT">
+                      {currentLang === 'hi' ? 'SCT - अनुसूचित जाति / जनजाति' : 'SCT - Scheduled Caste / Tribe'}
+                    </option>
                     <option value="EWS">EWS - Economically Weaker Section (आर्थिक कमजोर)</option>
                     <option value="Minority">Minority Community (अल्पसंख्यक)</option>
                     <option value="General">General / Open Category (सामान्य)</option>
@@ -401,9 +442,13 @@ export default function Home() {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year` : '₹0'}
-                      readOnly
-                      className="w-1/2 h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
+                      value={profile.annualIncome > 0 ? `₹${profile.annualIncome.toLocaleString('en-IN')} / year` : ''}
+                      placeholder={currentLang === 'hi' ? '₹0 (स्वतः भरा या टाइप करें)' : '₹0 (auto-filled or type)'}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, '');
+                        handleFormChange('annualIncome', raw ? Number(raw) : 0);
+                      }}
+                      className="w-1/2 h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-semibold text-slate-900 bg-white"
                     />
                     <div className="w-1/2 flex gap-1">
                       <button
@@ -474,18 +519,19 @@ export default function Home() {
                 {/* Educational Qualification */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    {currentLang === 'hi' ? 'शैक्षणिक योग्यता' : 'Highest Educational Qualification (शैक्षणिक योग्यता)'}
+                    {currentLang === 'hi' ? 'शैक्षणिक योग्यता (Qualification)' : 'Educational Qualification (शैक्षणिक योग्यता)'}
                   </label>
                   <select
-                    value={profile.education}
+                    value={profile.education || 'N/A'}
                     onChange={(e) => handleFormChange('education', e.target.value as EducationLevel)}
                     className="w-full h-11 px-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 bg-white"
                   >
-                    <option value="10th">Class 10th / Secondary School (हाईस्कूल)</option>
-                    <option value="12th">Class 12th / Intermediate (इंटरमीडिएट)</option>
-                    <option value="ITI">ITI / Polytechnic Diploma (डिप्लोमा)</option>
-                    <option value="Graduate">Graduate / Bachelor&apos;s Degree (स्नातक)</option>
-                    <option value="Literate">Literate / Traditional Skill (पारंपरिक हुनर)</option>
+                    <option value="N/A">N/A</option>
+                    <option value="10th">10th</option>
+                    <option value="12th">12th</option>
+                    <option value="Diploma">Diploma</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Post Graduate">Post Graduate</option>
                   </select>
                 </div>
 
@@ -496,7 +542,8 @@ export default function Home() {
                   </label>
                   <input
                     type="text"
-                    value={profile.profession ? `${profile.profession} (${profile.professionHi || 'कुम्हार'})` : 'Potter / Traditional Artisan'}
+                    value={profile.profession ? (profile.professionHi ? `${profile.profession} (${profile.professionHi})` : profile.profession) : ''}
+                    placeholder={currentLang === 'hi' ? 'ऊपर से व्यापार चुनें या खोजें' : 'Select trade above or search'}
                     readOnly
                     className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
                   />
@@ -582,16 +629,16 @@ export default function Home() {
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-semibold">
-                    👤 {profile.name}
+                    👤 {profile.name || (currentLang === 'hi' ? 'आवेदक' : 'Applicant')}
                   </span>
                   <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-xs font-semibold">
-                    🏷️ {profile.category} {profile.gender} ({profile.areaType} {profile.district})
+                    🏷️ {[profile.category, profile.gender, profile.areaType, profile.district].filter(Boolean).join(' ') || (currentLang === 'hi' ? 'सामान्य' : 'General')}
                   </span>
                   <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
                     💰 ₹{profile.requiredCapital.toLocaleString('en-IN')} Capital Need
                   </span>
                   <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold">
-                    🏺 {profile.profession}
+                    🏺 {profile.profession || (currentLang === 'hi' ? 'स्वरोजगार' : 'Self Employed')}
                   </span>
                 </div>
               </div>
@@ -683,7 +730,7 @@ export default function Home() {
                       <div>
                         <span className="text-xs font-bold text-slate-800">High Eligibility</span>
                         <p className="text-[10px] text-slate-500">
-                          {profile.category} {profile.gender} + {profile.areaType}
+                          {[profile.category, profile.gender, profile.areaType].filter(Boolean).join(' + ') || 'General Eligibility'}
                         </p>
                       </div>
                     </div>

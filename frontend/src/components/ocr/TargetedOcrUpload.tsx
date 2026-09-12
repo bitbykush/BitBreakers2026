@@ -57,7 +57,7 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
       return Boolean(data.annual_income || data.certificate_number);
     }
     if (data.doc_type === 'MARKSHEET') {
-      return Boolean(data.marks_percentage || data.highest_education);
+      return Boolean(data.marks_percentage || (data.highest_education && data.highest_education !== 'N/A'));
     }
     return false;
   };
@@ -114,8 +114,8 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         if (talkBackActive) {
           speakText(
             currentLang === 'hi'
-              ? `दस्तावेज़ सत्यापित हुआ। ${result.name ? 'नाम: ' + result.name : ''}`
-              : `Document verified successfully. ${result.name ? 'Name: ' + result.name : ''}`
+              ? `दस्तावेज़ सत्यापित हुआ। ${result.name ? 'नाम: ' + result.name : ''} ${result.annual_income ? 'वार्षिक आय: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'वर्ग: ' + result.category : ''}`
+              : `Document verified successfully. ${result.name ? 'Name: ' + result.name : ''} ${result.annual_income ? 'Annual Income: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'Category: ' + result.category : ''}`
           );
         }
       } else {
@@ -181,8 +181,8 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
         if (talkBackActive) {
           speakText(
             currentLang === 'hi'
-              ? `Gemini AI द्वारा दस्तावेज़ सत्यापित हुआ। ${result.name ? 'नाम: ' + result.name : ''}`
-              : `Document verified with Gemini Cloud AI. ${result.name ? 'Name: ' + result.name : ''}`
+              ? `Gemini AI द्वारा दस्तावेज़ सत्यापित हुआ। ${result.name ? 'नाम: ' + result.name : ''} ${result.annual_income ? 'वार्षिक आय: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'वर्ग: ' + result.category : ''}`
+              : `Document verified with Gemini Cloud AI. ${result.name ? 'Name: ' + result.name : ''} ${result.annual_income ? 'Annual Income: ₹' + Number(result.annual_income).toLocaleString('en-IN') : ''} ${result.category ? 'Category: ' + result.category : ''}`
           );
         }
       } else {
@@ -494,9 +494,33 @@ export const TargetedOcrUpload: React.FC<TargetedOcrUploadProps> = ({
               </span>
             )}
 
-            {extractedData.highest_education && (
+            {extractedData.dob && (
+              <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                DOB: {extractedData.dob}
+              </span>
+            )}
+
+            {extractedData.annual_income !== undefined && extractedData.annual_income !== null && (
               <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
-                {extractedData.highest_education} Pass
+                ₹{Number(extractedData.annual_income).toLocaleString('en-IN')}/yr
+              </span>
+            )}
+
+            {extractedData.financial_year && (
+              <span className="font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                FY: {extractedData.financial_year}
+              </span>
+            )}
+
+            {extractedData.certificate_number && (
+              <span className="font-mono font-semibold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                Cert: {extractedData.certificate_number}
+              </span>
+            )}
+
+            {extractedData.highest_education && extractedData.highest_education !== 'N/A' && (
+              <span className="font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-950">
+                {extractedData.highest_education}
                 {extractedData.marks_percentage !== undefined && extractedData.marks_percentage !== null
                   ? ` (${extractedData.marks_percentage}%)`
                   : ''}

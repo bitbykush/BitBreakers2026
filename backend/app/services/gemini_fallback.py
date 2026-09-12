@@ -146,10 +146,13 @@ MANDATORY RULES:
    - "certificate_number": Serial or reference number or null.
 6. For MARKSHEET:
    - "marks_percentage": numeric marks percentage only if explicitly printed on the certificate (e.g. 78.4), otherwise null. DO NOT calculate, sum, or average subject scores.
-   - "highest_education": 10th | 12th | ITI | Graduate | PostGraduate or null.
+   - "highest_education": strictly one of ["10th", "12th", "Diploma", "Graduate", "Post Graduate", "N/A"] or null.
      CRITICAL: Secondary School / High School / Matric / Class X is 10th.
      Senior Secondary / Higher Secondary / Intermediate / Class XII is 12th.
-     Do NOT classify Secondary as 12th unless it explicitly contains 'Senior', 'Higher', 'Intermediate', or 'XII'.
+     Polytechnic / ITI / Industrial Training is Diploma.
+     Bachelor / B.Tech / B.Sc / B.Com / B.A is Graduate.
+     Master / M.Tech / M.Sc / M.A / MBA is Post Graduate.
+     If not recognized or non-academic, set to "N/A".
    - "name": Student / candidate name. Ensure clean spacing between first, middle, and surname.
    - "dob": Date of birth in DD/MM/YYYY format if present.
    - "certificate_number": Roll number or certificate/registration number.
