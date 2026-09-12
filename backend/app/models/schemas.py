@@ -134,6 +134,12 @@ class SchemeListResponse(BaseModel):
     schemes: List[SchemeMatch]
 
 
+class SchemeComparisonResponse(BaseModel):
+    schemeA: SchemeMatch
+    schemeB: SchemeMatch
+    comparisonSummary: Dict[str, Any] = Field(default_factory=dict)
+
+
 # ---------------------------------------------------------------------------
 # OCR & KYC Schemas
 # ---------------------------------------------------------------------------

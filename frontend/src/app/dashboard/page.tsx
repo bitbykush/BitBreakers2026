@@ -11,6 +11,7 @@ import { FinancialAnalysisDrawer } from '@/components/compare/FinancialAnalysisD
 import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
+import { MOCK_SCHEMES } from '@/lib/mockData';
 import { SchemeMatch, ApplicantProfile, DigiLockerRecord } from '@/types';
 import { useDevHUD } from '@/hooks/useDevHUD';
 import {
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<ApplicantProfile>(DEFAULT_PROFILE);
   const [schemes, setSchemes] = useState<SchemeMatch[]>([]);
   const [selectedSchemeForAnalysis, setSelectedSchemeForAnalysis] = useState<SchemeMatch | null>(null);
+  const [selectedSchemeForCompare, setSelectedSchemeForCompare] = useState<SchemeMatch | null>(null);
 
   const [isDigiLockerOpen, setIsDigiLockerOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
@@ -70,22 +72,35 @@ export default function DashboardPage() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => router.push('/')}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-950 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-950 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Application Mode
           </button>
-          <button
-            type="button"
-            onClick={() => setIsCafModalOpen(true)}
-            className="h-9 px-3.5 rounded-xl bg-indigo-950 text-white text-xs font-semibold hover:bg-indigo-900 transition flex items-center gap-2 shadow-xs"
-          >
-            <FileText className="w-3.5 h-3.5 text-orange-400" />
-            <span>Generate Common Application Format (CAF)</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedSchemeForCompare(schemes[0] || null);
+                setIsCompareOpen(true);
+              }}
+              className="h-9 px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
+              <span>{currentLang === 'hi' ? 'योजनाओं की तुलना करें' : 'Compare Schemes'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCafModalOpen(true)}
+              className="h-9 px-3.5 rounded-xl bg-indigo-950 text-white text-xs font-semibold hover:bg-indigo-900 transition flex items-center gap-2 shadow-xs cursor-pointer"
+            >
+              <FileText className="w-3.5 h-3.5 text-orange-400" />
+              <span>Generate Common Application Format (CAF)</span>
+            </button>
+          </div>
         </div>
 
         {/* Summary Card */}
@@ -155,11 +170,14 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
-                      onClick={() => setIsCompareOpen(true)}
-                      className="h-8 px-3 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs"
+                      onClick={() => {
+                        setSelectedSchemeForCompare(scheme);
+                        setIsCompareOpen(true);
+                      }}
+                      className="h-8 px-3 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs cursor-pointer"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
-                      <span>Compare</span>
+                      <span>{currentLang === 'hi' ? 'तुलना करें' : 'Compare'}</span>
                     </button>
 
                     <button
@@ -168,7 +186,7 @@ export default function DashboardPage() {
                         setSelectedSchemeForAnalysis(scheme);
                         setIsFinancialAnalysisOpen(true);
                       }}
-                      className="h-8 px-3 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5"
+                      className="h-8 px-3 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 flex items-center gap-1.5 cursor-pointer"
                     >
                       <Banknote className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Financial Breakdown</span>
@@ -178,7 +196,7 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsCafModalOpen(true)}
-                    className="w-full sm:w-auto h-9 px-4 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto h-9 px-4 rounded-xl bg-indigo-950 hover:bg-indigo-900 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <FileText className="w-3.5 h-3.5 text-orange-400" />
                     <span>Generate Bank Application (CAF)</span>
@@ -200,6 +218,8 @@ export default function DashboardPage() {
       <CompareDrawer
         isOpen={isCompareOpen}
         onClose={() => setIsCompareOpen(false)}
+        schemes={schemes.length > 0 ? schemes : MOCK_SCHEMES}
+        initialScheme={selectedSchemeForCompare}
         onProceedPathway2={() => router.push('/apply')}
         currentLang={currentLang}
       />

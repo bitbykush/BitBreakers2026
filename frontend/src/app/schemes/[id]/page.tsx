@@ -26,6 +26,7 @@ import {
   Layers,
   FileQuestion,
   BookOpen,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 import { Header } from '@/components/common/Header';
@@ -35,6 +36,7 @@ import { MOCK_SCHEMES } from '@/lib/mockData';
 import { SchemeMatch, ApplicantProfile } from '@/types';
 import { useDevHUD } from '@/hooks/useDevHUD';
 import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
+import { CompareDrawer } from '@/components/compare/CompareDrawer';
 
 type NavTabId =
   | 'details'
@@ -81,6 +83,7 @@ export default function SchemeDetailsPage() {
 
   // Feedback widget state
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<null | 'helpful' | 'unhelpful'>(null);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
 
   // Dev HUD
   const { isOpen: isDevHudOpen, toggle: toggleDevHud, handleTripleTap } = useDevHUD();
@@ -242,14 +245,24 @@ export default function SchemeDetailsPage() {
             </span>
           </nav>
 
-          <button
-            type="button"
-            onClick={() => router.push('/apply')}
-            className="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-          >
-            <span>{currentLang === 'hi' ? 'कस्टम विवरण भरें' : 'Fill Custom Details'}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsCompareOpen(true)}
+              className="h-8 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-950 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
+              <span>{currentLang === 'hi' ? 'योजना की तुलना करें' : 'Compare Scheme'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/apply')}
+              className="h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+            >
+              <span>{currentLang === 'hi' ? 'कस्टम विवरण भरें' : 'Fill Custom Details'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Scheme Hero Header Card */}
@@ -265,10 +278,20 @@ export default function SchemeDetailsPage() {
                   {t}
                 </span>
               ))}
-            <span className="ml-auto px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              {scheme.compatibilityPercentage}% Match Score
-            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCompareOpen(true)}
+                className="px-3 py-1 rounded-full bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600" />
+                <span>{currentLang === 'hi' ? 'अन्य योजना से तुलना' : 'Compare Scheme'}</span>
+              </button>
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                {scheme.compatibilityPercentage}% Match Score
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -754,6 +777,16 @@ export default function SchemeDetailsPage() {
 
       {/* Footer */}
       <Footer currentLang={currentLang} />
+
+      {/* Side-by-side Scheme Comparison Drawer */}
+      <CompareDrawer
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        schemes={MOCK_SCHEMES}
+        initialScheme={scheme}
+        onProceedPathway2={() => router.push('/apply')}
+        currentLang={currentLang}
+      />
 
       {/* Hidden Dev Debug HUD */}
       <DevDebugDrawer

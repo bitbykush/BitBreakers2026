@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, PenSquare, ArrowRight } from 'lucide-react';
+import { ShieldCheck, PenSquare, ArrowRight, SlidersHorizontal } from 'lucide-react';
 import { SchemeMatch } from '@/types';
 
 interface BaselineMatchPreviewProps {
@@ -10,7 +10,7 @@ interface BaselineMatchPreviewProps {
   selectedTradeName: string;
   schemes: SchemeMatch[];
   onFillCustomDetails: (schemeId: string) => void;
-  onOpenCompare?: () => void;
+  onOpenCompare?: (scheme: SchemeMatch) => void;
   onOpenFinancialAnalysis?: (schemeId: string) => void;
   onSwitchToPathway2?: () => void;
 }
@@ -29,7 +29,7 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
   return (
     <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">
@@ -46,6 +46,17 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
             <span className="font-bold text-indigo-900">{selectedTradeName}</span>
           </p>
         </div>
+
+        {topSchemes.length > 0 && onOpenCompare && (
+          <button
+            type="button"
+            onClick={() => onOpenCompare(topSchemes[0])}
+            className="h-8 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-950 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer self-start sm:self-auto"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
+            <span>{currentLang === 'hi' ? 'योजनाओं की तुलना करें' : 'Compare Schemes'}</span>
+          </button>
+        )}
       </div>
 
       {/* Baseline Scheme Cards Grid */}
@@ -81,15 +92,28 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
                 <ShieldCheck className="w-3.5 h-3.5" /> 100% Collateral-Free
               </span>
 
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Compare Button */}
+                {onOpenCompare && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenCompare(scheme)}
+                    className="h-8 px-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 hover:text-indigo-950 transition flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
+                    title={currentLang === 'hi' ? 'अन्य योजना के साथ तुलना करें' : 'Compare with another scheme'}
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
+                    <span>{currentLang === 'hi' ? 'तुलना' : 'Compare'}</span>
+                  </button>
+                )}
+
                 {/* Fill Custom Details -> Goes to Pathway 2 */}
                 <button
                   type="button"
                   onClick={() => onFillCustomDetails(scheme.id)}
-                  className="h-8 px-3 rounded-lg text-xs font-semibold text-white bg-indigo-950 hover:bg-indigo-900 transition flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
+                  className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold text-white bg-indigo-950 hover:bg-indigo-900 transition flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
                 >
                   <PenSquare className="w-3.5 h-3.5 text-orange-300" />
-                  <span>{currentLang === 'hi' ? 'कस्टम विवरण भरें' : 'Fill Custom Details'}</span>
+                  <span>{currentLang === 'hi' ? 'कस्टम विवरण' : 'Fill Details'}</span>
                 </button>
 
                 {/* Arrow Button -> Opens new Scheme Details page */}

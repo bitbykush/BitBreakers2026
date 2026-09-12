@@ -31,6 +31,7 @@ import { DevDebugDrawer } from '@/components/dev/DevDebugDrawer';
 
 import { StorageService, DEFAULT_PROFILE } from '@/lib/storage';
 import { ApiService } from '@/lib/api';
+import { MOCK_SCHEMES } from '@/lib/mockData';
 import {
   ApplicantProfile,
   SchemeMatch,
@@ -56,6 +57,7 @@ export default function Home() {
   // Scheme Matches
   const [schemes, setSchemes] = useState<SchemeMatch[]>([]);
   const [selectedSchemeForAnalysis, setSelectedSchemeForAnalysis] = useState<SchemeMatch | null>(null);
+  const [selectedSchemeForCompare, setSelectedSchemeForCompare] = useState<SchemeMatch | null>(null);
 
   // Modals & Drawers State
   const [isDigiLockerOpen, setIsDigiLockerOpen] = useState(false);
@@ -258,7 +260,10 @@ export default function Home() {
                   selectedTradeName={`${profile.profession} (${profile.professionHi || 'कुम्हार'})`}
                   schemes={schemes}
                   onFillCustomDetails={handleSwitchToPathway2}
-                  onOpenCompare={() => setIsCompareOpen(true)}
+                  onOpenCompare={(scheme) => {
+                    setSelectedSchemeForCompare(scheme);
+                    setIsCompareOpen(true);
+                  }}
                   onOpenFinancialAnalysis={handleOpenFinancialAnalysis}
                   onSwitchToPathway2={handleSwitchToPathway2}
                 />
@@ -590,6 +595,20 @@ export default function Home() {
                   </span>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSchemeForCompare(schemes[0] || null);
+                    setIsCompareOpen(true);
+                  }}
+                  className="h-9 px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
+                  <span>{currentLang === 'hi' ? 'योजनाओं की तुलना' : 'Compare Schemes'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Ranked Scheme Cards */}
@@ -719,11 +738,14 @@ export default function Home() {
                       <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                         <button
                           type="button"
-                          onClick={() => setIsCompareOpen(true)}
-                          className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-sm transition active:scale-95"
+                          onClick={() => {
+                            setSelectedSchemeForCompare(scheme);
+                            setIsCompareOpen(true);
+                          }}
+                          className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
                         >
                           <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
-                          <span>Compare Scheme</span>
+                          <span>{currentLang === 'hi' ? 'योजना की तुलना करें' : 'Compare Scheme'}</span>
                         </button>
 
                         <button
@@ -768,6 +790,8 @@ export default function Home() {
       <CompareDrawer
         isOpen={isCompareOpen}
         onClose={() => setIsCompareOpen(false)}
+        schemes={schemes.length > 0 ? schemes : MOCK_SCHEMES}
+        initialScheme={selectedSchemeForCompare}
         onProceedPathway2={handleSwitchToPathway2}
         currentLang={currentLang}
       />

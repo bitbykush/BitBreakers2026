@@ -39,6 +39,40 @@ export const ApiService = {
   },
 
   /**
+   * Compares two schemes side-by-side.
+   */
+  async compareSchemes(
+    schemeAId: string,
+    schemeBId: string
+  ): Promise<{ schemeA: SchemeMatch; schemeB: SchemeMatch; comparisonSummary?: any } | null> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/schemes/compare?scheme_a=${encodeURIComponent(schemeAId)}&scheme_b=${encodeURIComponent(schemeBId)}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.schemeA && data.schemeB) {
+          return data;
+        }
+      }
+    } catch {
+      // Fallback to local schemes
+    }
+
+    const schemeA = MOCK_SCHEMES.find(
+      (s) => s.id.toLowerCase() === schemeAId.toLowerCase() || s.code.toLowerCase() === schemeAId.toLowerCase()
+    );
+    const schemeB = MOCK_SCHEMES.find(
+      (s) => s.id.toLowerCase() === schemeBId.toLowerCase() || s.code.toLowerCase() === schemeBId.toLowerCase()
+    );
+
+    if (schemeA && schemeB) {
+      return { schemeA, schemeB };
+    }
+    return null;
+  },
+
+  /**
    * Targeted OCR Extraction endpoint. Supports single or multiple images (Front + Back).
    */
   async extractTargetedOcr(
