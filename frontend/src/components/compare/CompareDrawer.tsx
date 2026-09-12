@@ -44,9 +44,12 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
   onProceedPathway2,
   currentLang,
 }) => {
-  // Use passed schemes or fallback to comprehensive mock database
+  // Always allow comparing against the full scheme catalog (29 schemes)
   const availableSchemes = useMemo(() => {
-    return schemes && schemes.length > 0 ? schemes : MOCK_SCHEMES;
+    const map = new Map<string, SchemeMatch>();
+    MOCK_SCHEMES.forEach((s) => map.set(s.id, s));
+    (schemes || []).forEach((s) => map.set(s.id, s));
+    return Array.from(map.values());
   }, [schemes]);
 
   const [schemeAId, setSchemeAId] = useState<string>('');

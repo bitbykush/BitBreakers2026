@@ -40,63 +40,33 @@ QUERY_STOP_WORDS = {
     "स्वरोजगार", "उद्योग"
 }
 
-# High-fidelity trade aliases and cross-lingual synonym anchors
-TRADE_SYNONYMS = {
-    "potter": ["pottery", "terracotta", "clay", "artisan", "कुम्हार", "माटी", "बर्तन"],
-    "pottery": ["potter", "terracotta", "clay", "artisan", "कुम्हार", "माटी"],
-    "कुम्हार": ["potter", "pottery", "terracotta", "clay", "artisan", "माटी"],
-    "tailor": ["tailoring", "garment", "handloom", "sewing", "boutique", "textile", "सिलाई", "दर्जी"],
-    "tailoring": ["tailor", "garment", "handloom", "sewing", "boutique", "textile", "सिलाई", "दर्जी"],
-    "sewing": ["tailor", "tailoring", "garment", "handloom", "boutique", "textile", "सिलाई", "दर्जी"],
-    "boutique": ["tailor", "tailoring", "garment", "handloom", "sewing", "textile", "सिलाई"],
-    "सिलाई": ["tailor", "tailoring", "sewing", "garment", "दर्जी"],
-    "दर्जी": ["tailor", "tailoring", "sewing", "सिलाई"],
-    "vendor": ["thela", "street vendor", "cart", "fruit stall", "vegetable", "stall", "रेहड़ी", "पटरी", "ठेला"],
-    "stall": ["vendor", "street vendor", "thela", "stall", "cart", "रेहड़ी", "ठेला"],
-    "thela": ["vendor", "street vendor", "रेहड़ी", "ठेला"],
-    "ठेला": ["thela", "vendor", "street vendor", "रेहड़ी"],
-    "रेहड़ी": ["thela", "vendor", "street vendor", "ठेला", "पटरी"],
-    "पटरी": ["thela", "vendor", "street vendor", "रेहड़ी"],
-    "dairy": ["milk", "cow", "buffalo", "cattle", "livestock", "animal husbandry", "डेयरी", "दूध", "पशुपालन"],
-    "milk": ["dairy", "cow", "buffalo", "cattle", "livestock", "animal husbandry", "डेयरी", "दूध", "पशुपालन"],
-    "दूध": ["dairy", "milk", "cattle", "livestock", "डेयरी", "पशुपालन"],
-    "डेयरी": ["dairy", "milk", "cattle", "livestock", "दूध", "पशुपालन"],
-    "solar": ["solar panel", "renewable", "energy", "photovoltaic", "scientist", "research", "सोलर", "सौर"],
-    "सोलर": ["solar", "renewable", "energy", "सौर"],
-    "सौर": ["solar", "renewable", "energy", "सोलर"],
-    "carpenter": ["carpentry", "wood", "furniture", "बढ़ई", "काष्ठकला"],
-    "carpentry": ["carpenter", "wood", "furniture", "बढ़ई", "काष्ठकला"],
-    "बढ़ई": ["carpenter", "carpentry", "wood", "काष्ठकला"],
-    "blacksmith": ["lohar", "iron", "metal", "लोहार", "धातु"],
-    "lohar": ["blacksmith", "iron", "metal", "लोहार", "धातु"],
-    "लोहार": ["blacksmith", "lohar", "iron", "धातु"],
-    "weaver": ["weaving", "bamboo", "basket", "handloom", "बुनकर", "बांस", "टोकरी"],
-    "बुनकर": ["weaver", "weaving", "handloom", "बांस", "टोकरी"],
-    "cobbler": ["leather", "footwear", "shoes", "मोची", "चर्मकार", "जूता"],
-    "मोची": ["cobbler", "leather", "footwear", "चर्मकार", "जूता"],
-    "barber": ["salon", "hair", "beauty parlour", "नाई", "सैलून", "ब्यूटी"],
-    "नाई": ["barber", "salon", "hair", "सैलून"],
-    "student": ["scholarship", "college", "school", "degree", "education", "study", "छात्र", "छात्रवृत्ति", "पढ़ाई"],
-    "college": ["student", "scholarship", "degree", "education", "study", "छात्र"],
-    "degree": ["student", "scholarship", "college", "education", "study", "छात्र"],
-    "छात्र": ["student", "scholarship", "college", "degree", "छात्रवृत्ति", "पढ़ाई"],
-    "छात्रवृत्ति": ["scholarship", "student", "college", "degree", "छात्र", "पढ़ाई"],
-    "पढ़ाई": ["study", "student", "scholarship", "education", "छात्र"],
-    "fisheries": ["fish", "aquaculture", "pond", "मछली", "मत्स्य"],
-    "fish": ["fisheries", "aquaculture", "pond", "मछली", "मत्स्य"],
-    "aquaculture": ["fisheries", "fish", "pond", "मछली", "मत्स्य"],
-    "मछली": ["fish", "fisheries", "aquaculture", "मत्स्य"],
-    "farmer": ["farming", "agriculture", "kisan", "crop", "खेती", "किसान"],
-    "farming": ["farmer", "agriculture", "kisan", "खेती", "किसान"],
-    "खेती": ["farming", "farmer", "agriculture", "किसान"],
-    "किसान": ["farmer", "farming", "agriculture", "खेती"],
-    "food": ["catering", "dhaba", "restaurant", "canteen", "processing", "pickle", "masala", "खान-पान", "ढाबा", "अचार", "मसाला"],
-    "pickle": ["food", "processing", "catering", "masala", "अचार"],
-    "masala": ["food", "processing", "catering", "pickle", "मसाला"],
-    "ढाबा": ["food", "catering", "dhaba", "restaurant", "खान-पान"],
-    "mechanic": ["repair", "garage", "vehicle", "automobile", "ev", "मैकेनिक", "मरम्मत"],
-    "मैकेनिक": ["mechanic", "repair", "garage", "मरम्मत"]
-}
+# Comprehensive bidirectional synonym clusters covering Indian trades and vernacular terms
+_SYNONYM_CLUSTERS = [
+    {"potter", "pottery", "terracotta", "clay", "pot", "pots", "artisan", "कुम्हार", "माटी", "बर्तन", "मिट्टी"},
+    {"tailor", "tailoring", "garment", "garments", "handloom", "sewing", "boutique", "textile", "clothes", "सिलाई", "दर्जी", "कपड़े"},
+    {"vendor", "street vendor", "thela", "cart", "stall", "fruit stall", "vegetable", "shop", "shopkeeper", "store", "रेहड़ी", "पटरी", "ठेला", "दुकान", "सब्जी", "फल", "ठेले"},
+    {"dairy", "milk", "cow", "buffalo", "cattle", "livestock", "animal husbandry", "डेयरी", "दूध", "पशुपालन", "गाय", "भैंस"},
+    {"solar", "solar panel", "renewable", "energy", "photovoltaic", "scientist", "research", "sun", "rooftop", "सोलर", "सौर", "छत"},
+    {"carpenter", "carpentry", "wood", "furniture", "woodwork", "बढ़ई", "काष्ठकला", "लकड़ी", "फर्नीचर"},
+    {"blacksmith", "lohar", "iron", "metal", "welder", "welding", "लोहार", "धातु", "लोहा"},
+    {"weaver", "weaving", "bamboo", "basket", "handloom", "carpet", "बुनकर", "बांस", "टोकरी"},
+    {"cobbler", "leather", "footwear", "shoes", "shoe", "मोची", "चर्मकार", "जूता", "चप्पल"},
+    {"barber", "salon", "hair", "beauty parlour", "beauty", "नाई", "सैलून", "ब्यूटी", "बाल"},
+    {"student", "scholarship", "college", "school", "degree", "education", "study", "fee", "fees", "छात्र", "छात्रवृत्ति", "पढ़ाई", "शिक्षा"},
+    {"fisheries", "fish", "aquaculture", "pond", "fisherman", "मछली", "मत्स्य", "मछुआरा", "तालाब"},
+    {"farmer", "farming", "agriculture", "kisan", "crop", "tractor", "खेती", "किसान", "कृषि", "फसल"},
+    {"food", "catering", "dhaba", "restaurant", "canteen", "processing", "pickle", "masala", "bakery", "sweets", "खान-पान", "ढाबा", "अचार", "मसाला", "मिठाई", "बेकरी"},
+    {"mechanic", "repair", "garage", "vehicle", "automobile", "ev", "motor", "bike", "car", "मैकेनिक", "मरम्मत", "गैराज"}
+]
+
+TRADE_SYNONYMS: Dict[str, List[str]] = {}
+for cluster in _SYNONYM_CLUSTERS:
+    for word in cluster:
+        w_lower = word.lower()
+        TRADE_SYNONYMS[w_lower] = [other.lower() for other in cluster if other != word]
+
+# Flagship universal MSME credit schemes applicable to any non-farm enterprise / self-employment
+UNIVERSAL_SCHEME_CODES = {"PMEGP", "MUDRA_SHISHU", "MUDRA_KISHORE", "MUDRA_TARUN", "CGTMSE"}
 
 
 def check_trade_relevance(scheme: Dict[str, Any], query: str, semantic_sim: float, is_mock_mode: bool) -> Tuple[bool, float, int]:
@@ -117,7 +87,7 @@ def check_trade_relevance(scheme: Dict[str, Any], query: str, semantic_sim: floa
     if not tokens:
         return False, 0.0, 0
 
-    # Expand tokens with synonyms
+    # Expand tokens with bidirectional synonyms
     expanded_tokens = set(tokens)
     for t in tokens:
         if t in TRADE_SYNONYMS:
@@ -134,22 +104,28 @@ def check_trade_relevance(scheme: Dict[str, Any], query: str, semantic_sim: floa
     highlights = " ".join(scheme.get("eligibilityHighlights", [])).lower()
     benefits = " ".join(scheme.get("benefits", [])).lower()
     badge = scheme.get("categoryBadge", "").lower()
+    code = scheme.get("code", "").upper()
 
     scheme_corpus = f"{target_kw} {name_en} {name_hi} {tags} {badge} {desc_en} {desc_hi} {highlights} {benefits}"
 
-    # Match tokens against scheme corpus
-    matched_tokens = {tok for tok in expanded_tokens if tok in scheme_corpus}
+    # Match tokens against scheme corpus (including substring matches for stems)
+    matched_tokens = {tok for tok in expanded_tokens if tok in scheme_corpus or any(tok in word for word in scheme_corpus.split())}
 
     direct_matched_original = [t for t in tokens if t in matched_tokens or any(s in matched_tokens for s in TRADE_SYNONYMS.get(t, []))]
     match_ratio = len(direct_matched_original) / max(1, len(tokens))
 
+    # Universal credit schemes (PMEGP, Mudra) apply to any non-scholarship self-employment activity
+    is_scholarship_query = any(tok in {"student", "scholarship", "college", "school", "degree", "education", "study", "छात्र", "छात्रवृत्ति", "पढ़ाई"} for tok in tokens)
+    is_universal_match = (code in UNIVERSAL_SCHEME_CODES) and (not is_scholarship_query)
+
     # Real semantic similarity threshold check (only if not in synthetic mock mode)
-    semantic_pass = (not is_mock_mode) and (semantic_sim >= 0.38)
+    semantic_pass = (not is_mock_mode) and (semantic_sim >= 0.35)
 
-    # Relevant only if original token/synonym matched or high semantic similarity
-    is_relevant = (len(direct_matched_original) > 0) or semantic_pass
+    # Relevant only if original token/synonym matched, or universal credit scheme, or high semantic similarity
+    is_relevant = (len(direct_matched_original) > 0) or is_universal_match or semantic_pass
+    effective_ratio = max(match_ratio, 0.7 if is_universal_match else 0.0)
 
-    return is_relevant, match_ratio, len(direct_matched_original)
+    return is_relevant, effective_ratio, len(direct_matched_original)
 
 
 class SchemeMatcher:
@@ -228,9 +204,9 @@ class SchemeMatcher:
         if max_income is not None and profile.annual_income_inr > max_income:
             return False, f"Annual income (₹{profile.annual_income_inr:,.0f}) exceeds ceiling of ₹{max_income:,.0f}"
 
-        # 2. Social Category Restriction Check
+        # 2. Social Category Restriction Check (only if specified)
         allowed_cats = crit.get("allowedCategories")
-        if allowed_cats:
+        if allowed_cats and profile.category and profile.category.strip():
             norm_profile_cat = profile.category.strip().upper()
             allowed_upper = [c.upper() for c in allowed_cats]
             
@@ -248,25 +224,25 @@ class SchemeMatcher:
             if not any(c in allowed_upper for c in candidate_cats):
                 return False, f"Category '{profile.category}' not eligible (requires {', '.join(allowed_cats)})"
 
-        # 3. Gender Exclusivity Check (e.g. Women-only schemes)
+        # 3. Gender Exclusivity Check (only if specified)
         allowed_genders = crit.get("allowedGenders")
-        if allowed_genders:
+        if allowed_genders and profile.gender and profile.gender.strip():
             norm_profile_gender = profile.gender.strip().capitalize()
             allowed_genders_cap = [g.capitalize() for g in allowed_genders]
             if norm_profile_gender not in allowed_genders_cap:
                 return False, f"Scheme exclusively available for {', '.join(allowed_genders)}"
 
-        # 4. Area Restriction Check (e.g. Rural only)
+        # 4. Area Restriction Check (only if specified)
         allowed_areas = crit.get("allowedAreas")
-        if allowed_areas:
+        if allowed_areas and profile.area and profile.area.strip():
             norm_profile_area = profile.area.strip().capitalize()
             allowed_areas_cap = [a.capitalize() for a in allowed_areas]
             if norm_profile_area not in allowed_areas_cap:
                 return False, f"Scheme restricted to {', '.join(allowed_areas)} areas"
 
-        # 5. Minimum Education Qualification Check
+        # 5. Minimum Education Qualification Check (only if specified)
         min_edu = crit.get("minEducation")
-        if min_edu:
+        if min_edu and profile.education and profile.education.strip() not in ["", "N/A"]:
             # PMEGP exemption: 8th pass is only statutory for projects > 5 Lakh
             is_pmegp_micro = (scheme.get("code") == "PMEGP" and profile.required_capital_inr <= 500000)
             if not is_pmegp_micro:

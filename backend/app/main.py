@@ -7,6 +7,7 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 
+import re
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -88,6 +89,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def normalize_path_slashes(request, call_next):
+    """Normalizes duplicate slashes (e.g. //api/v1/... -> /api/v1/...) to prevent 404s from trailing-slash base URLs."""
+    path = request.scope.get("path", "")
+    if "//" in path:
+        request.scope["path"] = re.sub(r"/+", "/", path)
+    return await call_next(request)
 
 # Mount API routers
 app.include_router(dev_router, prefix="/api/v1")

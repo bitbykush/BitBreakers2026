@@ -7,7 +7,8 @@ import {
 } from '../types';
 import { MOCK_SCHEMES } from './mockData';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const RAW_API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').trim();
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
 
 export const ApiService = {
   /**
@@ -208,34 +209,30 @@ export const ApiService = {
         'में', 'से', 'पर', 'है', 'हुनर', 'व्यापार', 'दुकानदार', 'दुकान'
       ]);
 
-      const TRADE_SYNONYMS: Record<string, string[]> = {
-        potter: ['pottery', 'terracotta', 'clay', 'artisan', 'कुम्हार', 'माटी'],
-        pottery: ['potter', 'terracotta', 'clay', 'artisan', 'कुम्हार', 'माटी'],
-        कुम्हार: ['potter', 'pottery', 'terracotta', 'clay', 'artisan', 'माटी'],
-        tailor: ['tailoring', 'garment', 'handloom', 'sewing', 'boutique', 'textile', 'सिलाई', 'दर्जी'],
-        tailoring: ['tailor', 'garment', 'handloom', 'sewing', 'boutique', 'textile', 'सिलाई', 'दर्जी'],
-        sewing: ['tailor', 'tailoring', 'garment', 'handloom', 'boutique', 'textile', 'सिलाई', 'दर्जी'],
-        सिलाई: ['tailor', 'tailoring', 'sewing', 'garment', 'दर्जी'],
-        दर्जी: ['tailor', 'tailoring', 'sewing', 'सिलाई'],
-        vendor: ['thela', 'street vendor', 'cart', 'fruit stall', 'vegetable', 'stall', 'रेहड़ी', 'पटरी', 'ठेला'],
-        stall: ['vendor', 'street vendor', 'thela', 'stall', 'cart', 'रेहड़ी', 'ठेला'],
-        thela: ['vendor', 'street vendor', 'रेहड़ी', 'ठेला'],
-        ठेला: ['thela', 'vendor', 'street vendor', 'रेहड़ी'],
-        रेहड़ी: ['thela', 'vendor', 'street vendor', 'ठेला', 'पटरी'],
-        dairy: ['milk', 'cow', 'buffalo', 'cattle', 'livestock', 'animal husbandry', 'डेयरी', 'दूध', 'पशुपालन'],
-        milk: ['dairy', 'cow', 'buffalo', 'cattle', 'livestock', 'animal husbandry', 'डेयरी', 'दूध', 'पशुपालन'],
-        दूध: ['dairy', 'milk', 'cattle', 'livestock', 'डेयरी'],
-        डेयरी: ['dairy', 'milk', 'cattle', 'livestock', 'दूध', 'पशुपालन'],
-        solar: ['solar panel', 'renewable', 'energy', 'photovoltaic', 'scientist', 'research', 'सोलर', 'सौर'],
-        सोलर: ['solar', 'renewable', 'energy', 'सौर'],
-        सौर: ['solar', 'renewable', 'energy', 'सोलर'],
-        carpenter: ['carpentry', 'wood', 'furniture', 'बढ़ई', 'काष्ठकला'],
-        बढ़ई: ['carpenter', 'carpentry', 'wood', 'काष्ठकला'],
-        student: ['scholarship', 'college', 'school', 'degree', 'education', 'study', 'छात्र', 'छात्रवृत्ति', 'पढ़ाई'],
-        छात्र: ['student', 'scholarship', 'college', 'degree', 'छात्रवृत्ति', 'पढ़ाई'],
-        छात्रवृत्ति: ['scholarship', 'student', 'college', 'degree', 'छात्र', 'पढ़ाई'],
-        पढ़ाई: ['study', 'student', 'scholarship', 'education', 'छात्र'],
-      };
+      const SYNONYM_CLUSTERS = [
+        ['potter', 'pottery', 'terracotta', 'clay', 'pot', 'pots', 'artisan', 'कुम्हार', 'माटी', 'बर्तन', 'मिट्टी'],
+        ['tailor', 'tailoring', 'garment', 'garments', 'handloom', 'sewing', 'boutique', 'textile', 'clothes', 'सिलाई', 'दर्जी', 'कपड़े'],
+        ['vendor', 'street vendor', 'thela', 'cart', 'stall', 'fruit stall', 'vegetable', 'shop', 'shopkeeper', 'store', 'रेहड़ी', 'पटरी', 'ठेला', 'दुकान', 'सब्जी', 'फल', 'ठेले'],
+        ['dairy', 'milk', 'cow', 'buffalo', 'cattle', 'livestock', 'animal husbandry', 'डेयरी', 'दूध', 'पशुपालन', 'गाय', 'भैंस'],
+        ['solar', 'solar panel', 'renewable', 'energy', 'photovoltaic', 'scientist', 'research', 'sun', 'rooftop', 'सोलर', 'सौर', 'छत'],
+        ['carpenter', 'carpentry', 'wood', 'furniture', 'woodwork', 'बढ़ई', 'काष्ठकला', 'लकड़ी', 'फर्नीचर'],
+        ['blacksmith', 'lohar', 'iron', 'metal', 'welder', 'welding', 'लोहार', 'धातु', 'लोहा'],
+        ['weaver', 'weaving', 'bamboo', 'basket', 'handloom', 'carpet', 'बुनकर', 'बांस', 'टोकरी'],
+        ['cobbler', 'leather', 'footwear', 'shoes', 'shoe', 'मोची', 'चर्मकार', 'जूता', 'चप्पल'],
+        ['barber', 'salon', 'hair', 'beauty parlour', 'beauty', 'नाई', 'सैलून', 'ब्यूटी', 'बाल'],
+        ['student', 'scholarship', 'college', 'school', 'degree', 'education', 'study', 'fee', 'fees', 'छात्र', 'छात्रवृत्ति', 'पढ़ाई', 'शिक्षा'],
+        ['fisheries', 'fish', 'aquaculture', 'pond', 'fisherman', 'मछली', 'मत्स्य', 'मछुआरा', 'तालाब'],
+        ['farmer', 'farming', 'agriculture', 'kisan', 'crop', 'tractor', 'खेती', 'किसान', 'कृषि', 'फसल'],
+        ['food', 'catering', 'dhaba', 'restaurant', 'canteen', 'processing', 'pickle', 'masala', 'bakery', 'sweets', 'खान-पान', 'ढाबा', 'अचार', 'मसाला', 'मिठाई', 'बेकरी'],
+        ['mechanic', 'repair', 'garage', 'vehicle', 'automobile', 'ev', 'motor', 'bike', 'car', 'मैकेनिक', 'मरम्मत', 'गैराज']
+      ];
+
+      const TRADE_SYNONYMS: Record<string, string[]> = {};
+      for (const cluster of SYNONYM_CLUSTERS) {
+        for (const word of cluster) {
+          TRADE_SYNONYMS[word.toLowerCase()] = cluster.filter((w) => w !== word).map((w) => w.toLowerCase());
+        }
+      }
 
       const rawTokens = rawQuery.match(/[\w\u0900-\u097F]+/g) || [];
       const tokens = rawTokens.filter((t) => !STOP_WORDS.has(t) && t.length >= 2);
@@ -252,9 +249,17 @@ export const ApiService = {
         }
       }
 
+      const isScholarshipQuery = effectiveTokens.some((tok) =>
+        ['student', 'scholarship', 'college', 'school', 'degree', 'education', 'study', 'छात्र', 'छात्रवृत्ति', 'पढ़ाई'].includes(tok)
+      );
+
+      const UNIVERSAL_CODES = new Set(['PMEGP', 'MUDRA_SHISHU', 'MUDRA_KISHORE', 'MUDRA_TARUN', 'CGTMSE']);
+
       const filtered = MOCK_SCHEMES.filter((scheme) => {
         const corpus = `${scheme.nameEn} ${scheme.nameHi} ${scheme.descriptionEn} ${scheme.descriptionHi} ${(scheme.tags || []).join(' ')} ${scheme.categoryBadge} ${scheme.eligibilityHighlights.join(' ')}`.toLowerCase();
-        return expandedList.some((tok) => corpus.includes(tok));
+        const matchesTrade = expandedList.some((tok) => corpus.includes(tok));
+        const matchesUniversal = UNIVERSAL_CODES.has(scheme.code) && !isScholarshipQuery;
+        return matchesTrade || matchesUniversal;
       });
 
       // Strict rejection: zero matches for random inputs like 'asdfghjkl'
