@@ -593,6 +593,45 @@ export default function Home() {
                     className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-slate-50"
                   />
                 </div>
+
+                {/* Mobile Number (for Portal Registration & SMS OTP) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {currentLang === 'hi' ? 'मोबाइल नंबर (Mobile Number)' : 'Mobile Number'}
+                    </label>
+                    <span className="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                      {currentLang === 'hi' ? 'OTP व पोर्टल पंजीकरण हेतु' : 'For Portal Login & OTP'}
+                    </span>
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    maxLength={10}
+                    value={profile.mobileNumber || ''}
+                    onChange={(e) => handleFormChange('mobileNumber', e.target.value.replace(/\D/g, ''))}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900 bg-white"
+                  />
+                </div>
+
+                {/* Optional Email Address */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {currentLang === 'hi' ? 'ईमेल आईडी (Email ID)' : 'Email Address'}
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                      {currentLang === 'hi' ? 'वैकल्पिक (Optional)' : 'Optional'}
+                    </span>
+                  </div>
+                  <input
+                    type="email"
+                    placeholder="e.g. applicant@gmail.com"
+                    value={profile.email || ''}
+                    onChange={(e) => handleFormChange('email', e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-sm font-medium text-slate-900 bg-white"
+                  />
+                </div>
               </div>
 
               {/* Project Capital Needed Slider */}
