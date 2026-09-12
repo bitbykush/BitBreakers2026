@@ -25,6 +25,8 @@ export const DEFAULT_PROFILE: ApplicantProfile = {
   profession: '',
   professionHi: '',
   requiredCapital: 0,
+  address: '',
+  pincode: '',
   maskedAadhaar: '',
   casteCertificateNo: '',
   incomeCertificateNo: '',

@@ -199,12 +199,23 @@ class ScopedOCREngine:
             extracted["can_use_gemini"] = False
 
             # 5. Check Confidence & Fallback Permission Gate
-            # Threshold is 65% (0.65) or if critical fields could not be parsed
-            has_essential_field = any(
-                extracted.get(k)
-                for k in ["name", "masked_aadhaar", "category", "annual_income", "marks_percentage", "highest_education"]
-            )
-            is_low_confidence = (overall_confidence < 0.65) or (len(text_lines) == 0) or (not has_essential_field)
+            # Threshold is 60% or if critical fields could not be parsed
+            if doc_type == "AADHAAR":
+                has_essential_field = bool(
+                    extracted.get("name")
+                    or extracted.get("masked_aadhaar")
+                    or extracted.get("address")
+                    or extracted.get("district")
+                    or extracted.get("state")
+                    or extracted.get("pincode")
+                    or extracted.get("dob")
+                )
+            else:
+                has_essential_field = any(
+                    extracted.get(k)
+                    for k in ["category", "annual_income", "marks_percentage", "highest_education", "certificate_number"]
+                )
+            is_low_confidence = (overall_confidence < (0.40 if doc_type == "AADHAAR" else 0.55)) or (len(text_lines) == 0) or (not has_essential_field)
 
             if is_low_confidence and force_engine == "AUTO":
                 if allow_gemini_fallback:

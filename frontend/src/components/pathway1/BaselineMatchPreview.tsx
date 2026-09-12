@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, PenSquare, ArrowRight, SlidersHorizontal, SearchX, FileText } from 'lucide-react';
+import { ShieldCheck, PenSquare, ArrowRight, SlidersHorizontal, SearchX } from 'lucide-react';
 import { SchemeMatch } from '@/types';
 
 interface BaselineMatchPreviewProps {
@@ -114,32 +114,6 @@ export const BaselineMatchPreview: React.FC<BaselineMatchPreviewProps> = ({
                 </span>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Download CAF Button */}
-                  {onOpenCaf && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCaf(scheme)}
-                      className="h-8 px-2.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-100/80 hover:bg-emerald-200 border border-emerald-300 transition flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
-                      title={currentLang === 'hi' ? 'योजना का आवेदन पत्र डाउनलोड करें' : 'Download Application Form'}
-                    >
-                      <FileText className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>{currentLang === 'hi' ? 'आवेदन पत्र' : 'Form (CAF)'}</span>
-                    </button>
-                  )}
-
-                  {/* Compare Button */}
-                  {onOpenCompare && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCompare(scheme)}
-                      className="h-8 px-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 hover:text-indigo-950 transition flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
-                      title={currentLang === 'hi' ? 'अन्य योजना के साथ तुलना करें' : 'Compare with another scheme'}
-                    >
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-orange-500" />
-                      <span>{currentLang === 'hi' ? 'तुलना' : 'Compare'}</span>
-                    </button>
-                  )}
-
                   {/* Fill Custom Details -> Goes to Pathway 2 */}
                   <button
                     type="button"

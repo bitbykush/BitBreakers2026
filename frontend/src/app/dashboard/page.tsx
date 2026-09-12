@@ -108,7 +108,7 @@ export default function DashboardPage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300 mb-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping" />
-                Stage 3: Verified Welfare Allocations
+                Stage 3: Matched Welfare Schemes
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-indigo-950">
                 Ranked Welfare & Subsidy Compatibility Results
