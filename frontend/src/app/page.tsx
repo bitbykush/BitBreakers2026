@@ -810,15 +810,35 @@ export default function Home() {
                         ? scheme.requiredDocuments
                         : ['Aadhaar Card', 'Caste Certificate', 'Income Certificate'];
 
-                      const checkVerified = (doc: string) =>
-                        verifiedDocCodes.includes(doc) ||
-                        (doc.toLowerCase().includes('aadhaar') && verifiedDocCodes.some((c) => c.toLowerCase().includes('aadhaar'))) ||
-                        (doc.toLowerCase().includes('caste') && verifiedDocCodes.some((c) => c.toLowerCase().includes('caste'))) ||
-                        (doc.toLowerCase().includes('income') && verifiedDocCodes.some((c) => c.toLowerCase().includes('income'))) ||
-                        (doc.toLowerCase().includes('bank') && verifiedDocCodes.some((c) => c.toLowerCase().includes('bank'))) ||
-                        (doc.toLowerCase().includes('residence') && verifiedDocCodes.some((c) => c.toLowerCase().includes('residence') || c.toLowerCase().includes('rural'))) ||
-                        (doc.toLowerCase().includes('report') && verifiedDocCodes.some((c) => c.toLowerCase().includes('report') || c.toLowerCase().includes('project'))) ||
-                        (doc.toLowerCase().includes('marksheet') && verifiedDocCodes.some((c) => c.toLowerCase().includes('marksheet') || c.toLowerCase().includes('education')));
+                      const checkVerified = (doc: string) => {
+                        const norm = doc.replace(/^DOC_/, '').toUpperCase();
+                        const storedDocs = StorageService.getDocuments();
+                        const matchingStored = storedDocs.find(
+                          (d) => d.code === doc || d.code.replace(/^DOC_/, '').toUpperCase() === norm
+                        );
+
+                        // Strict guardrail: DOC_RURAL and DOC_PROJECT_REPORT are non-OCR documents.
+                        // They require an actual user file uploaded in this session.
+                        if (doc === 'DOC_RURAL' || norm === 'RURAL' || doc === 'DOC_PROJECT_REPORT' || norm === 'PROJECT_REPORT') {
+                          return Boolean(
+                            matchingStored &&
+                            matchingStored.isVerified &&
+                            matchingStored.fileDataUrl &&
+                            !matchingStored.fileDataUrl.includes('JVBERi0xLjQKJcTl8uXrp')
+                          );
+                        }
+
+                        // For OCR-based documents (Aadhaar, Caste, Income, Marksheet)
+                        return (
+                          Boolean(matchingStored && matchingStored.isVerified) ||
+                          verifiedDocCodes.includes(doc) ||
+                          (doc.toLowerCase().includes('aadhaar') && verifiedDocCodes.some((c) => c.toLowerCase().includes('aadhaar'))) ||
+                          (doc.toLowerCase().includes('caste') && verifiedDocCodes.some((c) => c.toLowerCase().includes('caste'))) ||
+                          (doc.toLowerCase().includes('income') && verifiedDocCodes.some((c) => c.toLowerCase().includes('income'))) ||
+                          (doc.toLowerCase().includes('bank') && verifiedDocCodes.some((c) => c.toLowerCase().includes('bank'))) ||
+                          (doc.toLowerCase().includes('marksheet') && verifiedDocCodes.some((c) => c.toLowerCase().includes('marksheet') || c.toLowerCase().includes('education')))
+                        );
+                      };
 
                       const verifiedCount = reqDocs.filter(checkVerified).length;
                       const pendingCount = reqDocs.length - verifiedCount;
@@ -898,10 +918,10 @@ export default function Home() {
                                       <>
                                         <span className="text-amber-800 font-extrabold flex items-center gap-1 group-hover:underline">
                                           <UploadCloud className="w-3 h-3 text-amber-600" />
-                                          {currentLang === 'hi' ? 'अपलोड करें ⬆' : 'Upload File ⬆'}
+                                          {currentLang === 'hi' ? 'अपलोड करें (संलग्न नहीं)' : 'Upload (Not Attached)'}
                                         </span>
                                         <span className="text-[10px] font-bold text-amber-700 bg-amber-200/60 px-1.5 py-0.5 rounded">
-                                          Action Req
+                                          {currentLang === 'hi' ? 'संलग्न नहीं' : 'Not Attached'}
                                         </span>
                                       </>
                                     )}
