@@ -105,6 +105,11 @@ export const StorageService = {
     }
 
     localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('SEVA_KENDRA_PROFILE_SYNC', { detail: updated }));
+      } catch (e) {}
+    }
     return updated;
   },
 

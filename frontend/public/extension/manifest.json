@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Sugam Seva Sahayak (सुगम सेवा सहायक) - Portal Auto-Fill Assistant",
+  "version": "2.0.0",
+  "description": "Accessibility Co-Pilot with spoken guidance, zero-hallucination prompts, and auto-fill for Indian government welfare portals.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "*://*.gov.in/*",
+    "*://*.nic.in/*",
+    "*://*.jansamarth.in/*",
+    "*://localhost/*",
+    "*://127.0.0.1/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Sugam Seva Sahayak"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.gov.in/*",
+        "*://*.nic.in/*",
+        "*://*.jansamarth.in/*",
+        "*://localhost/*",
+        "*://127.0.0.1/*"
+      ],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
