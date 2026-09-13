@@ -164,18 +164,11 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--worker
 
 ---
 
-## 5. Mandatory Git Publication Restriction (Autofill Feature)
+## 5. Sugam Seva Sahayak Web Automation & Extension Status
 
-> [!WARNING]
-> **DO NOT PUBLISH OR PUSH AUTOFILL TO GIT**:
-> The AI Web Automation & Form-Filling Assistant (e-RPA) is actively under local development and is **NOT** ready for git publication.
-> - **Code Preservation**: Keep all autofill code intact and functional locally. NEVER delete or remove it.
-> - **Git Publication Ban**: Do NOT stage, commit, or push any of the following to Git in this or any future chats until the user explicitly commands:
->   - `backend/app/api/v1/routes_automation.py`
->   - `backend/app/models/automation_schemas.py`
->   - `backend/app/services/form_matcher_service.py`
->   - `frontend/public/extension/**`
->   - `frontend/src/components/automation/**`
->   - `frontend/src/lib/bookmarklet.ts`
-> - When committing for other features/tasks, use targeted staging (`git add <specific-file>`) and exclude all autofill files.
+> [!NOTE]
+> **Extension Published with User Authorization**:
+> The Sugam Seva Sahayak Web Extension (e-RPA) and backend semantic matcher services have been officially authorized and published to Git.
+> - Preserved and maintained under `frontend/public/extension/**` and `backend/app/services/form_matcher_service.py`.
+> - Fully supports 1-tap fast fill and voice-guided step-by-step walkthrough for uneducated and low-literacy citizens.
 
