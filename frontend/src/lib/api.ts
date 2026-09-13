@@ -95,12 +95,14 @@ export const ApiService = {
     try {
       const formData = new FormData();
       if (Array.isArray(fileOrFiles)) {
-        fileOrFiles.forEach((f) => formData.append('files', f));
-        if (fileOrFiles.length > 0) {
+        if (fileOrFiles.length === 1) {
+          // If only 1 file, send it as 'file' to avoid FastAPI List[UploadFile] Pydantic 422 error
           formData.append('file', fileOrFiles[0]);
+        } else {
+          // If multiple, send all as 'files'
+          fileOrFiles.forEach((f) => formData.append('files', f));
         }
       } else {
-        formData.append('files', fileOrFiles);
         formData.append('file', fileOrFiles);
       }
       formData.append('doc_type', docType);
@@ -117,11 +119,20 @@ export const ApiService = {
         return data;
       } else {
         const errJson = await response.json().catch(() => ({}));
+        let errorMessage = 'Document scan could not be completed.';
+        if (errJson && errJson.detail) {
+          if (typeof errJson.detail === 'string') {
+            errorMessage = errJson.detail;
+          } else if (Array.isArray(errJson.detail)) {
+            // Extract the first validation message if it's an array of Pydantic errors
+            errorMessage = errJson.detail[0]?.msg || JSON.stringify(errJson.detail);
+          }
+        }
         return {
           doc_type: docType,
           confidence: 0,
           engine: 'RapidOCR_ONNX',
-          error_message: (errJson && errJson.detail) || 'Document scan could not be completed.',
+          error_message: errorMessage,
           is_verified: false,
         };
       }

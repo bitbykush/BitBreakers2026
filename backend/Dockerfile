@@ -6,18 +6,22 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install minimal C++ runtime libraries for ONNX and PIL
+# Install minimal C++ and graphical runtime libraries for ONNX, OpenCV headless, and PIL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     libgl1 \
     libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download the FastEmbed ONNX model during build so runtime does not hang or spike RAM/CPU
+# Pre-download both FastEmbed and RapidOCR ONNX models during build so runtime never hangs or times out
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2')"
+RUN python -c "from rapidocr_onnxruntime import RapidOCR; RapidOCR()"
 
 COPY . .
 

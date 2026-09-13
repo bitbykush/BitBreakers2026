@@ -121,9 +121,10 @@ uvicorn==0.30.1
 pydantic==2.7.4
 pydantic-settings==2.3.4
 fastembed==0.3.1
+opencv-python-headless==4.10.0.84
 rapidocr-onnxruntime==1.3.24
 pillow==10.3.0
-google-genai==0.1.1
+google-genai==0.1.0
 numpy==1.26.4
 python-multipart==0.0.9
 httpx==0.27.0
@@ -143,18 +144,22 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install minimal C++ runtime libraries for ONNX and PIL
+# Install minimal C++ and graphical runtime libraries for ONNX, OpenCV headless, and PIL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     libgl1 \
     libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download the FastEmbed ONNX model during build so runtime does not hang
+# Pre-download both FastEmbed and RapidOCR ONNX models during build so runtime does not hang or spike RAM/CPU
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2')"
+RUN python -c "from rapidocr_onnxruntime import RapidOCR; RapidOCR()"
 
 COPY . .
 
